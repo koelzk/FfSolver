@@ -13,7 +13,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="image.png" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="image.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

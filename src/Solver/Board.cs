@@ -10,8 +10,8 @@ public class Board : IEquatable<Board>
     private Card? cell;
     private readonly List<Card>[] cascades;
 
-    private sbyte arcanaLowFdn = Card.MinorArcMinRank - 1;
-    private sbyte arcanaHighFdn = Card.MajorArcMaxRank + 1;
+    private sbyte majorFdnLow = Card.MajorArcMinRank - 1;
+    private sbyte majorFdnHigh = Card.MajorArcMaxRank + 1;
     private byte[] colorFdns = [Card.AceRank, Card.AceRank, Card.AceRank, Card.AceRank];
 
     public Board(IReadOnlyCollection<IReadOnlyCollection<Card>> cascades, Card? cell = default)
@@ -36,16 +36,23 @@ public class Board : IEquatable<Board>
     {
         cell = other.cell;
         cascades = other.cascades.Select(cc => cc.ToList()).ToArray();
-        arcanaLowFdn = other.arcanaLowFdn;
-        arcanaHighFdn = other.arcanaHighFdn;
+        majorFdnLow = other.majorFdnLow;
+        majorFdnHigh = other.majorFdnHigh;
         colorFdns = other.colorFdns.ToArray();
     }
 
-    public bool IsGameWon => arcanaLowFdn == arcanaHighFdn && colorFdns.All(v => v == Card.KingRank);
+    public bool IsGameWon => majorFdnLow == majorFdnHigh && colorFdns.All(v => v == Card.KingRank);
 
     public IReadOnlyList<IReadOnlyList<Card>> Cascades => cascades;
 
     public Card? Cell => cell;
+
+    public IEnumerable<Card?> MinorArcFoundations =>
+        Enumerable.Range(0, 4).Select(i => colorFdns[i] > 1 ? new Card(colorFdns[i], (Suit)i) : default(Card?));
+
+    public Card? MajorArcFoundationLow => majorFdnLow >= Card.MajorArcMinRank ? new Card(majorFdnLow, Suit.MajorArc) : default(Card?);
+    public Card? MajorArcFoundationHigh => majorFdnHigh <= Card.MajorArcMaxRank ? new Card(majorFdnHigh, Suit.MajorArc) : default(Card?);
+
 
     public void ApplyAutoMoves()
     {
@@ -69,10 +76,10 @@ public class Board : IEquatable<Board>
         var comparer = Comparer<List<Card>>.Create((a,b) => GetCascadeValue(a).CompareTo(GetCascadeValue(b)));
         Array.Sort(cascades, comparer);
 
-        if (arcanaLowFdn == arcanaHighFdn)
+        if (majorFdnLow == majorFdnHigh)
         {
-            arcanaLowFdn = 21;
-            arcanaHighFdn = 21;
+            majorFdnLow = 21;
+            majorFdnHigh = 21;
         }
     }
 
@@ -222,17 +229,17 @@ public class Board : IEquatable<Board>
 
     private void UpdateFoundation(Card removedCard)
     {
-        if (removedCard.Suit == Suit.Arcana)
+        if (removedCard.Suit == Suit.MajorArc)
         {
-            Debug.Assert(removedCard.Rank == arcanaLowFdn + 1 || removedCard.Rank == arcanaHighFdn - 1);
-            if (removedCard.Rank == arcanaLowFdn + 1)
+            Debug.Assert(removedCard.Rank == majorFdnLow + 1 || removedCard.Rank == majorFdnHigh - 1);
+            if (removedCard.Rank == majorFdnLow + 1)
             {
-                arcanaLowFdn++;
+                majorFdnLow++;
             }
             
-            if (removedCard.Rank == arcanaHighFdn - 1)
+            if (removedCard.Rank == majorFdnHigh - 1)
             {
-                arcanaHighFdn--;
+                majorFdnHigh--;
             }
         }
         else
@@ -314,8 +321,8 @@ public class Board : IEquatable<Board>
         var fdnStrings = Enumerable.Range(0, 4)
             .Select(i => $"{(colorFdns[i] < 2 ? "-" : new Card(colorFdns[i], (Suit)i).ToString()), 4}");
 
-        var arcanaLowFdnString = arcanaLowFdn > -1 ? arcanaLowFdn.ToString() : "-";
-        var arcanaHighFdnString = arcanaHighFdn < 22 ? arcanaHighFdn.ToString() : "-";
+        var arcanaLowFdnString = majorFdnLow > -1 ? majorFdnLow.ToString() : "-";
+        var arcanaHighFdnString = majorFdnHigh < 22 ? majorFdnHigh.ToString() : "-";
         sb.AppendLine($"{arcanaLowFdnString,4} {arcanaHighFdnString,4}     {cell?.ToString() ?? "-",4}       {string.Join(" ", fdnStrings)}");
 
         var maxCount = cascades.Select(cc => cc.Count).Max();
@@ -376,21 +383,21 @@ public class Board : IEquatable<Board>
 
         if (lowFdns.TryGetValue(4, out var arcLow))
         {
-            arcanaLowFdn =  (sbyte)arcLow;
-            arcanaHighFdn = (sbyte)(allCards.Where(c => c.Suit == Suit.Arcana).Select(c => c.Rank).Max() + 1);
+            majorFdnLow =  (sbyte)arcLow;
+            majorFdnHigh = (sbyte)(allCards.Where(c => c.Suit == Suit.MajorArc).Select(c => c.Rank).Max() + 1);
         }
         else
         {
-            arcanaLowFdn = 21;
-            arcanaHighFdn = 21;
+            majorFdnLow = 21;
+            majorFdnHigh = 21;
         }
     }
 
     private bool CanRemoveCard(Card card)
     {
-        if (card.Suit == Suit.Arcana)
+        if (card.Suit == Suit.MajorArc)
         {
-            return (card.Rank == arcanaLowFdn + 1) || (card.Rank == arcanaHighFdn - 1);
+            return (card.Rank == majorFdnLow + 1) || (card.Rank == majorFdnHigh - 1);
         }
 
         if (cell.HasValue) // Cell must be empty to remove color cards

@@ -18,7 +18,34 @@ JY 15 KY 9R 18 - 3 8R 7Y 20 12
         var solver = new Solver(board);
 
         // Act
-        var result = solver.Solve(maxIterations: 200_000, maxSteps: 50);
+        var result = solver.Solve(maxIterations: 200_000, maxSteps: 70);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(result.Solved);
+        Assert.Equal(SolveResultStatus.Solved, result.Status);
+
+        Assert.NotNull(result.Moves);
+        Assert.True(result.Moves.Count < 70);
+    }
+
+    [Fact]
+    public void TestSolve2()
+    {
+        // Arrange
+        var boardString = @"10	11	KR	6	QG	-	7Y	6Y	QR	JR	20
+5	1	4	JG	5G	-	7B	2Y	15	5Y	7G
+8Y	3R	5B	2G	18	-	6G	19	JB	4Y	21
+9	KB	KG	3Y	KY	-	8R	9B	14	6B	2B
+0	2R	5R	QY	2	-	4B	4G	10Y	6R	9R
+8B	3	12	7R	7	-	13	9Y	10R	QB	17
+8	10B	10G	4R	16	-	8G	JY	9G	3B	3G";
+
+        var board = BoardHelper.Parse(boardString);
+        var solver = new Solver(board);
+
+        // Act
+        var result = solver.Solve(maxIterations: 200_000, maxSteps: 70);
 
         // Assert
         Assert.NotNull(result);

@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace FfSolver;
 
 
-public partial class Solver
+public class Solver
 {
     private readonly Dictionary<Board, BoardNode> visitedNodes = [];
     private readonly PriorityQueue<BoardNode, int> queue = new();
@@ -17,12 +17,16 @@ public partial class Solver
         this.start = start;
     }
 
-    public SolveResult Solve(int maxIterations = 500_000, int maxSteps = 100)
+    public SolveResult Solve(int maxIterations = 500_000, int maxSteps = 100, bool returnOnSolve = true)
     {
         var board = new Board(start);
         board.ApplyAutoMoves();
+
         var startNode = new BoardNode(board, null, null, 0, 0);
         queue.Enqueue(startNode, 0);
+
+        var currentMaxSteps = maxSteps;
+        var solutionNode = default(BoardNode?);
 
         for (var iteration = 0; iteration < maxIterations; iteration++)
         {
@@ -36,18 +40,28 @@ public partial class Solver
 
             if (current.IsGameWon)
             {
-                return new SolveResult(SolveResultStatus.Solved, maxIterations, AssembleMoves(current));
+                solutionNode = solutionNode == null || solutionNode.Step > currentNode.Step
+                    ? currentNode
+                    : solutionNode;
+                currentMaxSteps = solutionNode.Step - 1;
+
+                if (returnOnSolve)
+                {
+                    break;
+                }
             }   
 
             var moves = current.EnumerateMoves().ToList();
 
             foreach (var move in moves)
             {
-                AddNode(currentNode, move, maxSteps);
+                AddNode(currentNode, move, currentMaxSteps);
             }
         }
 
-        return new SolveResult(SolveResultStatus.ReachedMaxIterations, maxIterations);
+        return solutionNode is null
+            ? new SolveResult(SolveResultStatus.ReachedMaxIterations, maxIterations)
+            : new SolveResult(SolveResultStatus.Solved, maxIterations, AssembleMoves(solutionNode.Board));
     }
 
     private void AddNode(BoardNode currentNode, Move move, int maxSteps)

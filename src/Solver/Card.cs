@@ -1,6 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
 namespace FfSolver;
+
+/// <summary>
+/// Represents a single card
+/// </summary>
 public readonly struct Card : IEquatable<Card>
 {
     public const int AceRank = 1;
@@ -9,19 +13,19 @@ public readonly struct Card : IEquatable<Card>
     public const int QueenRank = 12;
     public const int KingRank = 13;
 
-    public const int MinorArcMinRank = 0;    
+    public const int MajorArcMinRank = 0;    
 
     public const int MajorArcMaxRank = 21;
 
     private const string suitString = "RGBYA";
-    private readonly static string[] rankStrings = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    private readonly static string[] rankStrings = ["?", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
     private readonly byte value;
 
     public Card(int rank, Suit suit) => 
         value =
-            (suit == Suit.Arcana && (rank < 0 || rank > 21)) ||
-            (suit != Suit.Arcana && (rank < 2 || rank > 13))
+            (suit == Suit.MajorArc && (rank < 0 || rank > 21)) ||
+            (suit != Suit.MajorArc && (rank < 2 || rank > 13))
             ? throw new ArgumentException($"Invalid rank {rank}", nameof(rank))
             : (byte)(rank | ((int)suit << 5));
 
@@ -41,15 +45,17 @@ public readonly struct Card : IEquatable<Card>
         return (Rank == other.Rank - 1) || (Rank == other.Rank + 1);
     }
 
-    public override string ToString() => Suit == Suit.Arcana
-        ? Rank.ToString()
-        : rankStrings[Rank - 2] + suitString[(int)Suit];
+    public override string ToString() => Suit == Suit.MajorArc
+        ? GetRankString()
+        : GetRankString() + suitString[(int)Suit];
+
+    public string GetRankString() => Suit == Suit.MajorArc ? Rank.ToString() : rankStrings[Rank];
 
     public static IEnumerable<Card> CreateDeck()
     {
         for (var i = 0; i <= 21; i++)
         {
-            yield return new Card(i, Suit.Arcana);
+            yield return new Card(i, Suit.MajorArc);
         }
 
         foreach (var suit in new[] { Suit.Red, Suit.Green, Suit.Blue, Suit.Yellow })

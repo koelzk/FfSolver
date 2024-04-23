@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace FfSolver;
@@ -7,7 +6,7 @@ public static class BoardHelper
 {
     private static readonly Regex cardRegex = new Regex(@"(?'rank'\d{1,2}|J|Q|K)(?'suit'[RGBY]?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    public static Board Parse(string cascadesString, string cellString = null)
+    public static Board Parse(string cascadesString, string cellString = "")
     {
         var cardStrings = cascadesString.Split(new[] {' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var cascades = Enumerable.Range(0, Board.CascadeCount).Select(i => new List<Card>()).ToArray();
@@ -54,7 +53,7 @@ public static class BoardHelper
         return new Board(cascades, cell);
     }
 
-    private static Card? ParseCard(string cardString)
+    public static Card? ParseCard(string cardString)
     {
         if (cardString is null)
         {
@@ -78,14 +77,14 @@ public static class BoardHelper
             "G" => Suit.Green,
             "B" => Suit.Blue,
             "Y" => Suit.Yellow,
-            "" => Suit.Arcana,
+            "" => Suit.MajorArc,
             _ => throw new FormatException("Invalid suit")
         };
 
         var rankString = match.Groups["rank"].Value.ToUpper();
         var rank = int.TryParse(rankString, out var r) ? r : -1;
 
-        if (suit != Suit.Arcana)
+        if (suit != Suit.MajorArc)
         {
             if (rank == -1)
             {
