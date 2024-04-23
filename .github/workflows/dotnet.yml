@@ -25,7 +25,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal -l:trx;LogFileName=TestOutput.trx
+      run: dotnet test --no-build --verbosity normal --logger trx --results-directory test-results
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2.16.1
       if: always()
