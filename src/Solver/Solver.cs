@@ -7,8 +7,8 @@ namespace FfSolver;
 
 public partial class Solver
 {
-    private readonly Dictionary<Board, BoardNode> visitedNodes = new Dictionary<Board, BoardNode>();
-    private readonly PriorityQueue<BoardNode, int> queue = new PriorityQueue<BoardNode, int>();
+    private readonly Dictionary<Board, BoardNode> visitedNodes = [];
+    private readonly PriorityQueue<BoardNode, int> queue = new();
 
     Board start;
 
@@ -33,14 +33,6 @@ public partial class Solver
 
             var currentNode = queue.Dequeue();
             var current = currentNode.Board;
-
-#if DEBUG_OUTPUT
-            if (iteration % 1000 == 0)
-            {
-                Console.WriteLine($"{iteration}\n========================");
-                Console.WriteLine(current);
-            }
-#endif
 
             if (current.IsGameWon)
             {
