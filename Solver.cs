@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace FfSolver;
 
 
-public class Solver
+public partial class Solver
 {
     private readonly Dictionary<Board, BoardNode> visitedNodes = new Dictionary<Board, BoardNode>();
     private readonly PriorityQueue<BoardNode, int> queue = new PriorityQueue<BoardNode, int>();
@@ -28,7 +28,7 @@ public class Solver
         {
             if (queue.Count == 0)
             {
-                return new SolveResult(SolveResultStatus.NoSolution);
+                return new SolveResult(SolveResultStatus.NoSolution, iteration);
             }
 
             var currentNode = queue.Dequeue();
@@ -44,7 +44,7 @@ public class Solver
 
             if (current.IsGameWon)
             {
-                return new SolveResult(SolveResultStatus.Solved, AssembleMoves(current));
+                return new SolveResult(SolveResultStatus.Solved, iteration, AssembleMoves(current));
             }   
 
             var moves = current.EnumerateMoves().ToList();
@@ -55,7 +55,7 @@ public class Solver
             }
         }
 
-        return new SolveResult(SolveResultStatus.ReachedMaxIterations);
+        return new SolveResult(SolveResultStatus.ReachedMaxIterations, maxIterations);
     }
 
     private void AddNode(BoardNode currentNode, Move move, int maxSteps)
@@ -106,24 +106,4 @@ public class Solver
 
         return moves;
     }    
-
-    public class BoardNode
-    {
-        public BoardNode(Board board, Board? previous, Move? move, int step, int score)
-        {
-            Board = board;
-            Previous = previous;
-            Move = move;
-            Step = step;
-            Score = score;
-        }
-
-        public Board Board { get; }
-        public Board? Previous { get; }
-        public Move? Move { get; }
-
-        public int Step { get; }
-
-        public int Score { get; }
-    }
 }

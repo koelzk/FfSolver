@@ -253,18 +253,18 @@ public class Board : IEquatable<Board>
             var stack = GetStackSize(cc);
             if (cc.Count == 0)
             {
-                return 20;
+                return 10;
             }
             else if (cc.Count == stack)
             {
-                return stack * 2;
+                return stack * 3;
             }
             else
             {
-                return stack;
+                return stack * 2;
             }
         }).Sum();
-        score -= cell.HasValue ? 10 : 0;
+        score -= cell.HasValue ? 8 : 0;
         score -= step;
 
         return score;

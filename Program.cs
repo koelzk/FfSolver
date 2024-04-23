@@ -3,8 +3,10 @@
 static void Solve()
 {
     //var seed = 994;
-    var seeds = Enumerable.Range(0, 1000);
-    Parallel.ForEach(seeds, seed =>
+    var results = new List<SolveResult>();
+
+    var maxCount = 50;
+    Parallel.For(0, maxCount, seed =>
     {
         var board = Board.CreateRandom(new Random(seed));
         //Console.WriteLine(board);
@@ -12,8 +14,17 @@ static void Solve()
         var solver = new Solver(board);
         var result = solver.Solve(maxSteps: 200);
 
-        Console.WriteLine($"Seed {seed, 5}:" + (result.Solved ? $"{result.Moves?.Count}" : result.Status.ToString()));
+        lock (results)
+        {
+            results.Add(result);
+        }
+
+        Console.WriteLine($"{seed, 5}\t" + (result.Solved ? $"{result.Moves?.Count}" : result.Status.ToString()));
     });
+
+    Console.WriteLine($"Iteration Sum: {results.Select(r => r.Iteration).Sum()}");
+    Console.WriteLine($"Moves Sum: {results.Select(r => r.Moves?.Count ?? 0).Sum()}");
+    Console.WriteLine($"Solved: {results.Select(r => r.Solved ? 1 : 0).Sum()}");
 }
 
 Solve();
