@@ -3,6 +3,16 @@
 namespace FfSolver;
 public readonly struct Card : IEquatable<Card>
 {
+    public const int AceRank = 1;
+
+    public const int JackRank = 11;
+    public const int QueenRank = 12;
+    public const int KingRank = 13;
+
+    public const int MinorArcMinRank = 0;    
+
+    public const int MajorArcMaxRank = 21;
+
     private const string suitString = "RGBYA";
     private readonly static string[] rankStrings = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
@@ -18,6 +28,8 @@ public readonly struct Card : IEquatable<Card>
     public int Rank => value & 0x1f;
 
     public Suit Suit => (Suit)(value >> 5);
+
+    public byte Value => value;
 
     public bool CanPlaceOn(Card other)
     {

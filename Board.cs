@@ -1,16 +1,19 @@
 ﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace FfSolver;
 
 public class Board : IEquatable<Board>
 {
+    private const int CascadeCount = 11;
+
     private Card? cell;
     private readonly List<Card>[] cascades;
 
-    private sbyte arcanaLowFdn = -1;
-    private sbyte arcanaHighFdn = 22;
-    private byte[] colorFdns = [1, 1, 1, 1];
+    private sbyte arcanaLowFdn = Card.MinorArcMinRank - 1;
+    private sbyte arcanaHighFdn = Card.MajorArcMaxRank + 1;
+    private byte[] colorFdns = [Card.AceRank, Card.AceRank, Card.AceRank, Card.AceRank];
 
     public Board(IReadOnlyCollection<IReadOnlyCollection<Card>> cascades, Card? cell = default)
     {
@@ -19,7 +22,7 @@ public class Board : IEquatable<Board>
             throw new ArgumentNullException(nameof(cascades));
         }
 
-        if (cascades.Count != 11)
+        if (cascades.Count != CascadeCount)
         {
             throw new ArgumentException("Invalid number of cascades", nameof(cascades));
         }
@@ -39,11 +42,50 @@ public class Board : IEquatable<Board>
         colorFdns = other.colorFdns.ToArray();
     }
 
-    public bool IsGameWon => throw new NotImplementedException();
+    public bool IsGameWon => arcanaLowFdn == arcanaHighFdn && colorFdns.All(v => v == Card.KingRank);
+
+    public IReadOnlyList<IReadOnlyList<Card>> Cascades => cascades;
+
+    public Card? Cell => cell;
+
+    public void ApplyAutoMoves()
+    {
+        bool appliedMoves;
+        do
+        {
+            appliedMoves = false;
+            foreach (var move in EnumerateAutoMoves())
+            {
+                ApplyMove(move);
+                appliedMoves = true;
+            }
+        }
+        while (appliedMoves);
+    }
+
+    public void NormalizeOrder()
+    {
+        byte GetCascadeValue(List<Card> cascade) => cascade.Count > 0 ? cascade.First().Value : byte.MaxValue;
+
+        var comparer = Comparer<List<Card>>.Create((a,b) => GetCascadeValue(a).CompareTo(GetCascadeValue(b)));
+        Array.Sort(cascades, comparer);
+
+        if (arcanaLowFdn == arcanaHighFdn)
+        {
+            arcanaLowFdn = 21;
+            arcanaHighFdn = 21;
+        }
+    }
+
+    public void Normalize()    
+    {
+        ApplyAutoMoves();
+        NormalizeOrder();
+    }
 
     public IEnumerable<Move> EnumerateAutoMoves()
     {
-        for (var i = 0; i < 11; i++)
+        for (var i = 0; i < CascadeCount; i++)
         {
             if (cascades[i].Count == 0)
             {
@@ -65,7 +107,7 @@ public class Board : IEquatable<Board>
     public IEnumerable<Move> EnumerateMoves()
     {
         // Move k cards from cascade i to cascade j:
-        for (var i = 0; i < 11; i++)
+        for (var i = 0; i < CascadeCount; i++)
         {
             var stackSize = GetStackSize(cascades[i]);
 
@@ -74,7 +116,7 @@ public class Board : IEquatable<Board>
                 continue;
             }
 
-            for (var j = 0; j < 11; j++)
+            for (var j = 0; j < CascadeCount; j++)
             {
                 if (i == j)
                 {
@@ -93,7 +135,7 @@ public class Board : IEquatable<Board>
         if (cell.HasValue)
         {
             // Move 1 card from cell to cascade j:
-            for (var j = 0; j < 11; j++)
+            for (var j = 0; j < CascadeCount; j++)
             {
                 if (cascades[j].Count == 0 || cell.Value.CanPlaceOn(cascades[j].Last()))
                 {
@@ -104,7 +146,7 @@ public class Board : IEquatable<Board>
         else
         {
             // Move 1 card from cascade to cell:
-            for (var i = 0; i < 11; i++)
+            for (var i = 0; i < CascadeCount; i++)
             {
                 if (cascades[i].Count > 0)
                 {
@@ -118,8 +160,8 @@ public class Board : IEquatable<Board>
     {
         if (move.From >= 0 && move.To >= 0) // Move from cascade to cascade:
         {
-            Debug.Assert(move.From >= 0 && move.From < 11);
-            Debug.Assert(move.To >= 0 && move.To < 11);
+            Debug.Assert(move.From >= 0 && move.From < CascadeCount);
+            Debug.Assert(move.To >= 0 && move.To < CascadeCount);
 
             var from = cascades[move.From];
             var to = cascades[move.To];
@@ -142,7 +184,7 @@ public class Board : IEquatable<Board>
             }
             else
             {
-                Debug.Assert(move.From >= 0 && move.From < 11);
+                Debug.Assert(move.From >= 0 && move.From < CascadeCount);
                 var from = cascades[move.From];
                 Debug.Assert(from.Count > 0);
 
@@ -154,13 +196,13 @@ public class Board : IEquatable<Board>
         else if (move.From == Move.Cell) // Move from cell to cascade:
         {
             Debug.Assert(cell.HasValue);
-            Debug.Assert(move.To >= 0 && move.To < 11);
+            Debug.Assert(move.To >= 0 && move.To < CascadeCount);
             cascades[move.To].Add(cell.Value);
             cell = null;
         }
         else // Move from cascade to cell:
         {            
-            Debug.Assert(move.From >= 0 && move.From < 11);
+            Debug.Assert(move.From >= 0 && move.From < CascadeCount);
             Debug.Assert(!cell.HasValue);
             Debug.Assert(!cell.HasValue);
 
@@ -181,7 +223,8 @@ public class Board : IEquatable<Board>
             {
                 arcanaLowFdn++;
             }
-            else
+            
+            if (removedCard.Rank == arcanaHighFdn - 1)
             {
                 arcanaHighFdn--;
             }
@@ -194,13 +237,14 @@ public class Board : IEquatable<Board>
         }
     }
 
-    public int GetScore()
+    public int GetScore(int step)
     {
         var score = 0;
 
         score -= cascades.Sum(cc => cc.Count);
         score += cascades.Select(GetStackSize).Select(stack => stack == 0 ? 20 : stack).Sum();
         score -= cell.HasValue ? 10 : 0;
+        score -= step;
 
         return score;
     }
@@ -269,14 +313,14 @@ public class Board : IEquatable<Board>
             return false;
         }
 
-        Debug.Assert(cascades.Length == 11 && other.cascades.Length == 11);
+        Debug.Assert(cascades.Length == CascadeCount && other.cascades.Length == CascadeCount);
 
         if (!cell.Equals(other.cell))
         {
             return false;
         }
 
-        for (var i = 0; i < 11; i++)
+        for (var i = 0; i < CascadeCount; i++)
         {
             if (!Enumerable.SequenceEqual(cascades[i], other.cascades[i]))
             {
@@ -298,17 +342,25 @@ public class Board : IEquatable<Board>
         }
 
         var lowFdns = allCards.GroupBy(c => (int)c.Suit)
-            .OrderBy(g => g.Key)
-            .Select(g => g.Select(c => c.Rank).Min() - 1)
-            .ToArray();
+            .ToDictionary(g => g.Key, g => g.Select(c => c.Rank).Min() - 1);
 
         for (var i = 0; i < 4; i++)
         {
-            colorFdns[i] = (byte)lowFdns[i];
+            colorFdns[i] = lowFdns.TryGetValue(i, out var f)
+                ? (byte)f
+                : (byte)Card.KingRank;
         }
 
-        arcanaLowFdn = (sbyte)lowFdns[4];
-        arcanaHighFdn = (sbyte)(allCards.Where(c => c.Suit == Suit.Arcana).Select(c => c.Rank).Max() + 1);
+        if (lowFdns.TryGetValue(4, out var arcLow))
+        {
+            arcanaLowFdn =  (sbyte)arcLow;
+            arcanaHighFdn = (sbyte)(allCards.Where(c => c.Suit == Suit.Arcana).Select(c => c.Rank).Max() + 1);
+        }
+        else
+        {
+            arcanaLowFdn = 21;
+            arcanaHighFdn = 21;
+        }
     }
 
     private bool CanRemoveCard(Card card)

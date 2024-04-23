@@ -7,7 +7,7 @@ public readonly struct Move
 
     public Move(int from, int to) : this(from, to, 1)
     {
-
+        // Nothing to do here.
     }
 
     public Move(int from, int to, int count)
@@ -22,4 +22,17 @@ public readonly struct Move
     public int To { get; }
 
     public int Count { get; }
+
+    public override string ToString() => Count == 1
+        ? $"Move card from {GetLocationString(From)} to {GetLocationString(To)}"
+        : $"Move {Count} cards from {GetLocationString(From)} to {GetLocationString(To)}";
+
+    private string GetLocationString(int index) =>
+        index switch
+        {
+            Cell => "cell",
+            Foundation => "foundation",
+            _ => $"cascade {index}",
+        };
+
 }
