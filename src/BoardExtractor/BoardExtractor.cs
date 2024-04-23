@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text;
 using FfSolver;
 using SkiaSharp;
@@ -127,7 +126,6 @@ public class BoardExtractor
             foreach (var card in candidates)
             {
                 var ssd = GetSsd(tileImage, templateMap[card]);
-                Console.WriteLine($"{card} => {ssd}");                
 
                 if (ssd < best.ssd)
                 {
@@ -148,8 +146,8 @@ public class BoardExtractor
             sb.Append(column == 9 ? "\n" : column == 4 ? " - " : " ");
         }
 
-        return BoardHelper.Parse(sb.ToString());        
-    }    
+        return BoardHelper.Parse(sb.ToString());
+    }
 
     public static void ExtractImageTile(string imageFilePath, Func<int, string> tileNameSelector)
     {

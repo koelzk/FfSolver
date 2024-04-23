@@ -12,7 +12,7 @@ public static class BoardDisplayHelper
             Suit.Green => AnsiColor.Green,
             Suit.Blue => AnsiColor.Blue,
             Suit.Yellow => AnsiColor.Yellow,
-            _ => AnsiColor.Yellow,
+            _ => AnsiColor.White,
         };
 
         var backgroundColor = card.Suit switch
@@ -23,11 +23,10 @@ public static class BoardDisplayHelper
 
         var styles = new[]
         {
-            AnsiColorStringHelper.GetCommand(foregroundColor, AnsiStyle.Intense),
-            AnsiColorStringHelper.GetCommand(backgroundColor, AnsiStyle.Background),
+            AnsiColorStringHelper.GetCommand(foregroundColor, AnsiStyle.Regular),
+            //AnsiColorStringHelper.GetCommand(backgroundColor, AnsiStyle.Background),
         };
 
-        //var suitString = "🏆🪄🗡🪙 "[(int)card.Suit];
         var suitString = "♥♣♠♦ "[(int)card.Suit];
 
         return AnsiColorStringHelper.GetString($"{card.GetRankString()+suitString, -3} ", styles);
