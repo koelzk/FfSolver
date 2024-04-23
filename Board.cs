@@ -1,12 +1,11 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace FfSolver;
 
 public class Board : IEquatable<Board>
 {
-    private const int CascadeCount = 11;
+    internal const int CascadeCount = 11;
 
     private Card? cell;
     private readonly List<Card>[] cascades;
@@ -109,12 +108,12 @@ public class Board : IEquatable<Board>
         // Move k cards from cascade i to cascade j:
         for (var i = 0; i < CascadeCount; i++)
         {
-            var stackSize = GetStackSize(cascades[i]);
-
-            if (stackSize == 0)
+            if (cascades[i].Count == 0)
             {
                 continue;
             }
+
+            var stackSize = GetStackSize(cascades[i]);
 
             for (var j = 0; j < CascadeCount; j++)
             {
@@ -173,6 +172,8 @@ public class Board : IEquatable<Board>
                 to.Add(from.Last());
                 from.RemoveAt(from.Count - 1);
             }
+
+            return;
         }        
         else if (move.To == Move.Foundation) // Move from cascade or cell to foundation:
         {
@@ -192,6 +193,8 @@ public class Board : IEquatable<Board>
 
                 from.RemoveAt(from.Count - 1);
             }
+
+            return;
         }
         else if (move.From == Move.Cell) // Move from cell to cascade:
         {
@@ -199,11 +202,12 @@ public class Board : IEquatable<Board>
             Debug.Assert(move.To >= 0 && move.To < CascadeCount);
             cascades[move.To].Add(cell.Value);
             cell = null;
+
+            return;
         }
         else // Move from cascade to cell:
         {            
             Debug.Assert(move.From >= 0 && move.From < CascadeCount);
-            Debug.Assert(!cell.HasValue);
             Debug.Assert(!cell.HasValue);
 
             var from = cascades[move.From];
@@ -211,6 +215,8 @@ public class Board : IEquatable<Board>
 
             cell = from.Last();
             from.RemoveAt(from.Count - 1);
+
+            return;
         }
     }
 
@@ -242,7 +248,22 @@ public class Board : IEquatable<Board>
         var score = 0;
 
         score -= cascades.Sum(cc => cc.Count);
-        score += cascades.Select(GetStackSize).Select(stack => stack == 0 ? 20 : stack).Sum();
+        score += cascades.Select(cc => 
+        {
+            var stack = GetStackSize(cc);
+            if (cc.Count == 0)
+            {
+                return 20;
+            }
+            else if (cc.Count == stack)
+            {
+                return stack * 2;
+            }
+            else
+            {
+                return stack;
+            }
+        }).Sum();
         score -= cell.HasValue ? 10 : 0;
         score -= step;
 
