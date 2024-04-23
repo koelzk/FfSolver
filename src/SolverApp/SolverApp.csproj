@@ -12,4 +12,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="image.png" CopyToOutputDirectory="PreserveNewest"/>
+  </ItemGroup>
+
 </Project>
