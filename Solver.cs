@@ -44,7 +44,7 @@ public partial class Solver
 
             if (current.IsGameWon)
             {
-                return new SolveResult(SolveResultStatus.Solved, iteration, AssembleMoves(current));
+                return new SolveResult(SolveResultStatus.Solved, maxIterations, AssembleMoves(current));
             }   
 
             var moves = current.EnumerateMoves().ToList();
@@ -63,19 +63,25 @@ public partial class Solver
         Board next = new Board(currentNode.Board);
         next.ApplyMove(move);
         next.Normalize();
+        var step = currentNode.Step + 1;
 
-        if (!visitedNodes.ContainsKey(next) && currentNode.Step < maxSteps)
+        var oldNode = visitedNodes.TryGetValue(next, out var on) ? on : null;
+
+        if ((oldNode == null && step <= maxSteps) || (oldNode != null && step < oldNode.Step))
         {
-            var nextNode = new BoardNode(next, currentNode.Board, move, currentNode.Step + 1, next.GetScore(currentNode.Step + 1));
-            visitedNodes.Add(next, nextNode);
-            queue.Enqueue(nextNode, -nextNode.Score);
-        }
-        else
-        {
-            //TODO: Check for shortcuts
+            var nextNode = new BoardNode(next, currentNode.Board, move, step, next.GetScore(step));
+
+            if (oldNode == null)
+            {
+                visitedNodes.Add(next, nextNode);
+                queue.Enqueue(nextNode, -nextNode.Score);
+            }
+            else
+            {
+                visitedNodes[next] = nextNode;
+            }
         }
     }
-
 
     private List<Move> AssembleMoves(Board end)
     {

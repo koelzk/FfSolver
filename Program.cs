@@ -5,7 +5,7 @@ static void Solve()
     //var seed = 994;
     var results = new List<SolveResult>();
 
-    var maxCount = 50;
+    var maxCount = 1000;
     Parallel.For(0, maxCount, seed =>
     {
         var board = Board.CreateRandom(new Random(seed));
@@ -19,7 +19,12 @@ static void Solve()
             results.Add(result);
         }
 
-        Console.WriteLine($"{seed, 5}\t" + (result.Solved ? $"{result.Moves?.Count}" : result.Status.ToString()));
+        if (result.Solved)
+        {
+            Console.WriteLine(seed);
+        }
+
+        // Console.WriteLine($"{seed, 5}\t" + (result.Solved ? $"{result.Moves?.Count}" : result.Status.ToString()));
     });
 
     Console.WriteLine($"Iteration Sum: {results.Select(r => r.Iteration).Sum()}");
