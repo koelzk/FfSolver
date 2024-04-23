@@ -314,7 +314,9 @@ public class Board : IEquatable<Board>
         var fdnStrings = Enumerable.Range(0, 4)
             .Select(i => $"{(colorFdns[i] < 2 ? "-" : new Card(colorFdns[i], (Suit)i).ToString()), 4}");
 
-        sb.AppendLine($"{arcanaLowFdn,4} {arcanaHighFdn,4}     {cell?.ToString() ?? "-",4}       {string.Join(" ", fdnStrings)}");
+        var arcanaLowFdnString = arcanaLowFdn > -1 ? arcanaLowFdn.ToString() : "-";
+        var arcanaHighFdnString = arcanaHighFdn < 22 ? arcanaHighFdn.ToString() : "-";
+        sb.AppendLine($"{arcanaLowFdnString,4} {arcanaHighFdnString,4}     {cell?.ToString() ?? "-",4}       {string.Join(" ", fdnStrings)}");
 
         var maxCount = cascades.Select(cc => cc.Count).Max();
         for (var row = 0; row < maxCount; row++)
