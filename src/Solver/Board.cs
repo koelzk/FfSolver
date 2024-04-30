@@ -129,11 +129,13 @@ public class Board : IEquatable<Board>
                     continue;
                 }
 
-                for (var k = stackSize; k > 0; k--)
+                
+                if (cascades[j].Count == 0 || cascades[i].Last().CanPlaceOn(cascades[j].Last()))
                 {
-                    if (cascades[j].Count == 0 || cascades[i].Last().CanPlaceOn(cascades[j].Last()))
-
-                    yield return new Move(i, j, k);
+                    for (var k = stackSize; k > 0; k--)
+                    {
+                        yield return new Move(i, j, k);
+                    }
                 }
             }
         }
