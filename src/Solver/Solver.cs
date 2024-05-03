@@ -27,8 +27,9 @@ public class Solver
 
         var currentMaxSteps = maxSteps;
         var solutionNode = default(BoardNode?);
+        int iteration;
 
-        for (var iteration = 0; iteration < maxIterations; iteration++)
+        for (iteration = 0; iteration < maxIterations; iteration++)
         {
             if (queue.Count == 0)
             {
@@ -60,8 +61,8 @@ public class Solver
         }
 
         return solutionNode is null
-            ? new SolveResult(SolveResultStatus.ReachedMaxIterations, maxIterations)
-            : new SolveResult(SolveResultStatus.Solved, maxIterations, AssembleMoves(solutionNode.Board));
+            ? new SolveResult(SolveResultStatus.ReachedMaxIterations, iteration)
+            : new SolveResult(SolveResultStatus.Solved, iteration, AssembleMoves(solutionNode.Board));
     }
 
     private void AddNode(BoardNode currentNode, Move move, int maxSteps)
