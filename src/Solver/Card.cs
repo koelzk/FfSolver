@@ -8,10 +8,12 @@ namespace FfSolver;
 public readonly struct Card : IEquatable<Card>
 {
     public const int AceRank = 1;
-
     public const int JackRank = 11;
     public const int QueenRank = 12;
     public const int KingRank = 13;
+
+    public const int MinorArcMinRank = 2;
+    public const int MinorArcMaxRank = KingRank;
 
     public const int MajorArcMinRank = 0;    
 
@@ -24,12 +26,12 @@ public readonly struct Card : IEquatable<Card>
 
     public Card(int rank, Suit suit) => 
         value =
-            (suit == Suit.MajorArc && (rank < 0 || rank > 21)) ||
-            (suit != Suit.MajorArc && (rank < 2 || rank > 13))
+            (suit == Suit.MajorArc && (rank < MajorArcMinRank || rank > MajorArcMaxRank)) ||
+            (suit != Suit.MajorArc && (rank < MinorArcMinRank || rank > MinorArcMaxRank))
             ? throw new ArgumentException($"Invalid rank {rank}", nameof(rank))
             : (byte)(rank | ((int)suit << 5));
 
-    public int Rank => value & 0x1f;
+    public int Rank => value & ((1 << 5) - 1);
 
     public Suit Suit => (Suit)(value >> 5);
 
@@ -53,14 +55,14 @@ public readonly struct Card : IEquatable<Card>
 
     public static IEnumerable<Card> CreateDeck()
     {
-        for (var i = 0; i <= 21; i++)
+        for (var i = MajorArcMinRank; i <= MajorArcMaxRank; i++)
         {
             yield return new Card(i, Suit.MajorArc);
         }
 
         foreach (var suit in new[] { Suit.Red, Suit.Green, Suit.Blue, Suit.Yellow })
         {
-            for (var i = 2; i <= 13; i++)
+            for (var i = MinorArcMinRank; i <= MinorArcMaxRank; i++)
             {
                 yield return new Card(i, suit);
             }

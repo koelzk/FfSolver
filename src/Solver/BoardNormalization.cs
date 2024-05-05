@@ -12,7 +12,7 @@ public class BoardNormalization
     public void Advance(Board board)
     {
         var cascadeMap = board.Cascades
-            .Zip(cascadeIndices, (cc, ci) => (cascade: cc, cascadeIndex: ci, stackId: StackId(cc)))
+            .Zip(cascadeIndices, (cc, ci) => (cascade: cc, cascadeIndex: ci, stackId: CascadeRank(cc)))
             .OrderBy(t => t.stackId)
             .ToArray();
 
@@ -23,6 +23,6 @@ public class BoardNormalization
 
     public Move Translate(Move m) => new Move(Translate(m.From), Translate(m.To), m.Count);
 
-    public static int StackId(IReadOnlyList<Card> cascade) =>
+    public static int CascadeRank(IReadOnlyList<Card> cascade) =>
         cascade.Count == 0 ? int.MaxValue : cascade[0].Value;
 }

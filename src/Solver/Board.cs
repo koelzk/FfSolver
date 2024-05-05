@@ -5,11 +5,10 @@ namespace FfSolver;
 
 public class Board : IEquatable<Board>
 {
-    internal const int CascadeCount = 11;
+    public const int CascadeCount = 11;
 
     private Card? cell;
     private readonly List<Card>[] cascades;
-
     private sbyte majorFdnLow = Card.MajorArcMinRank - 1;
     private sbyte majorFdnHigh = Card.MajorArcMaxRank + 1;
     private byte[] colorFdns = [Card.AceRank, Card.AceRank, Card.AceRank, Card.AceRank];
@@ -71,9 +70,7 @@ public class Board : IEquatable<Board>
 
     public void NormalizeOrder()
     {
-        byte GetCascadeValue(List<Card> cascade) => cascade.Count > 0 ? cascade.First().Value : byte.MaxValue;
-
-        var comparer = Comparer<List<Card>>.Create((a,b) => GetCascadeValue(a).CompareTo(GetCascadeValue(b)));
+        var comparer = Comparer<List<Card>>.Create((a,b) => BoardNormalization.CascadeRank(a).CompareTo(BoardNormalization.CascadeRank(b)));
         Array.Sort(cascades, comparer);
 
         if (majorFdnLow == majorFdnHigh)

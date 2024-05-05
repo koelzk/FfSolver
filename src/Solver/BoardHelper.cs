@@ -6,6 +6,14 @@ public static class BoardHelper
 {
     private static readonly Regex cardRegex = new Regex(@"(?'rank'\d{1,2}|J|Q|K)(?'suit'[RGBY]?)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    /// <summary>
+    /// Parses a board state from the specified cascade and cell string.
+    /// </summary>
+    /// <remarks>
+    /// </remarks>
+    /// <param name="cascadesString">Cascade string</param>
+    /// <param name="cellString">Optional cell string</param>
+    /// <returns></returns>
     public static Board Parse(string cascadesString, string cellString = "")
     {
         var cardStrings = cascadesString.Split(new[] {' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -53,6 +61,22 @@ public static class BoardHelper
         return new Board(cascades, cell);
     }
 
+    /// <summary>
+    /// Parses a single card position from the specified string
+    /// </summary>
+    /// <remarks>
+    /// Values for <paramref name="cardString"/> must not contain leading or trailing whitespace.
+    /// A card string may have the following values:
+    /// <list type="bullet">
+    /// <item><c>-</c> represents an empty position</item>
+    /// <item><c>(2|3|4|5|6|7|8|9|10|J|Q|K)(R|G|B|Y)</c> represents a minor arcana card of rank 2-10, Jack, Queen or King and suit of Red, Green, Blue or Yellow (e.g., <c>10G</c>)</item>
+    /// <item><c>0-21</c> represents a major arcana card of rank 0-21</item>
+    /// </list>
+    /// </remarks>
+    /// <param name="cardString">String specifying a single card</param>
+    /// <returns>Parsed card or null if the position is empty</returns>
+    /// <exception cref="ArgumentNullException">Card string is null</exception>
+    /// <exception cref="FormatException">Card string is invalid</exception>
     public static Card? ParseCard(string cardString)
     {
         if (cardString is null)
@@ -107,5 +131,27 @@ public static class BoardHelper
         }
 
         return new Card(rank, suit);
+    }
+
+    /// <summary>
+    /// Returns a pseudo-randomized board using the specified seed.
+    /// </summary>
+    /// <param name="seed">Seed</param>
+    /// <returns>Randomized board</returns>
+    public static Board CreateRandomFromSeed(ulong seed)
+    {
+        var orderValues = Enumerable.Repeat(new Xoshiro256PlusPlus(seed), 70).Select(rng => rng.Next());
+        var shuffledDeck = Card.CreateDeck()
+            .Zip(orderValues, (card, order) => (card, order))
+            .OrderBy(t => t.order)
+            .Select(t => t.card);
+
+        var cascades = shuffledDeck.Select((c, i) => (card: c, cascade: i / 7))
+            .GroupBy(t => t.cascade)
+            .Select(g => g.Select(t => t.card).ToList())
+            .ToList();
+
+        cascades.Insert(5, new List<Card>());
+        return new Board(cascades);        
     }
 }
