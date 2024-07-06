@@ -328,7 +328,7 @@ public class Board : IEquatable<Board>
         for (var row = 0; row < maxCount; row++)
         {
             var rowString = cascades.Select(cc => row < cc.Count ? cc[row] : default(Card?))
-                .Select(c => $"{c,4}");
+                .Select(c => $"{c?.ToString() ?? "-",4}");
             sb.AppendLine(string.Concat(rowString));
         }
 

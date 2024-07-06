@@ -16,11 +16,11 @@ public class BoardExtractor
     /// <summary>
     /// Left X-position of each cascade in pixels
     /// </summary>
-    private static readonly int[] XCoords = [178, 323, 467, 612, 757, 1046, 1191, 1336, 1480, 1625];
+    private static readonly int[] XCoords = [178, 323, 467, 612, 757, 902, 1046, 1191, 1336, 1480, 1625];
     /// <summary>
     /// Top Y-position of each cascade in pixels
     /// </summary>
-    private static readonly int[] YCoords = [347, 378, 409, 440, 471, 502, 533];
+    private static readonly int[] YCoords = [347, 378, 409, 440, 471, 502, 533, 564, 595, 626, 657, 688, 719, 750, 781, 812, 843, 874, 905, 936, 967, 998, 1029];
     private readonly IReadOnlyDictionary<Card, SKBitmap> templateMap;
     /// <summary>
     /// Tile width in pixels
@@ -31,11 +31,14 @@ public class BoardExtractor
     /// </summary>
     private const int TileHeight = 29;
 
-    private static IEnumerable<SKRectI> EnumerateTiles()
+    private static IEnumerable<Tile> EnumerateTiles()
     {
         var size = new SKSizeI(TileWidth, TileHeight);
         return YCoords.SelectMany(
-            y => XCoords.Select(x => SKRectI.Create(new SKPointI(x, y), size)));
+            y => XCoords.Select(x => 
+                new Tile(x, y, SKRectI.Create(new SKPointI(x, y), size))
+            )
+        );
     }
 
     /// <summary>
@@ -109,41 +112,46 @@ public class BoardExtractor
 
         var candidates = new HashSet<Card>(templateMap.Keys);
 
-        foreach (var (tile, index) in EnumerateTiles().Select(Tuple.Create<SKRectI, int>))
+        foreach (var tile in EnumerateTiles())
         {
-            var tileImage = new SKBitmap();
+            if (candidates.Count == 0)
+            {
+                break;
+            }
 
+            var tileImage = new SKBitmap();
             image.GetPixelSpan();
 
-            if (!image.ExtractSubset(tileImage, tile))
+            if (!image.ExtractSubset(tileImage, tile.Region))
             {
                 throw new InvalidDataException("Could not extract tile image");
             }
 
             tileImage = tileImage.Copy();
 
-            (Card card, long ssd) best = (candidates.First(), long.MaxValue);
-            foreach (var card in candidates)
+            var ssds = candidates
+                .Select(card => (card: card, ssd: GetSsd(tileImage, templateMap[card])))
+                .TakeWhile(t => t.ssd > 0)
+                .OrderBy(t => t.ssd)
+                .ToList();
+            var card = ssds
+                .Where(t => t.ssd <= 100_000)
+                .Select(t => (Card?)t.card)
+                .FirstOrDefault();
+                //.MinBy(t => t.ssd);
+
+            var cardString = card?.ToString() ?? "-";
+
+            Console.WriteLine($"{tile}: {cardString} {string.Join(", ", ssds.Take(5).Select(t => $"{t.card}:{t.ssd}"))}");
+
+            if (card != null)
             {
-                var ssd = GetSsd(tileImage, templateMap[card]);
-
-                if (ssd < best.ssd)
-                {
-                    best = (card, ssd);
-
-                    if (ssd == 0)
-                    {
-                        break;
-                    }
-                }
+                candidates.Remove(card.Value);
             }
 
-            candidates.Remove(best.card);
-
-            sb.Append(best.card);
-
-            var column = index % 10;
-            sb.Append(column == 9 ? "\n" : column == 4 ? " - " : " ");
+            sb.Append(cardString);
+            var column = tile.CascadeIndex;
+            sb.Append(column == 10 ? "\n" : " ");
         }
 
         return BoardHelper.Parse(sb.ToString());
@@ -158,9 +166,9 @@ public class BoardExtractor
             throw new ArgumentException("Image resolution is not 1920x1080.", nameof(imageFilePath));
         }
 
-        foreach (var (tile, index) in EnumerateTiles().Select(Tuple.Create<SKRectI, int>))
+        foreach (var (tile, index) in EnumerateTiles().Select(Tuple.Create<Tile, int>))
         {
-            var tileImage = image.Subset(tile);
+            var tileImage = image.Subset(tile.Region);
             var name = tileNameSelector?.Invoke(index) ?? index.ToString();
             var imagePath = $"{name}.png";
 
@@ -175,4 +183,6 @@ public class BoardExtractor
         encodedData.SaveTo(bitmapImageStream);
         bitmapImageStream.Flush(true);
     }
+
+    private record Tile(int CascadeIndex, int Row, SKRectI Region);
 }
