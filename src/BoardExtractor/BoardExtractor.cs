@@ -35,8 +35,8 @@ public class BoardExtractor
     {
         var size = new SKSizeI(TileWidth, TileHeight);
         return YCoords.SelectMany(
-            y => XCoords.Select(x => 
-                new Tile(x, y, SKRectI.Create(new SKPointI(x, y), size))
+            (y, j) => XCoords.Select((x, i) => 
+                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size))
             )
         );
     }
@@ -131,18 +131,15 @@ public class BoardExtractor
 
             var ssds = candidates
                 .Select(card => (card: card, ssd: GetSsd(tileImage, templateMap[card])))
-                .TakeWhile(t => t.ssd > 0)
+                .TakeUntil(t => t.ssd > 0)
                 .OrderBy(t => t.ssd)
                 .ToList();
             var card = ssds
                 .Where(t => t.ssd <= 100_000)
                 .Select(t => (Card?)t.card)
                 .FirstOrDefault();
-                //.MinBy(t => t.ssd);
 
             var cardString = card?.ToString() ?? "-";
-
-            Console.WriteLine($"{tile}: {cardString} {string.Join(", ", ssds.Take(5).Select(t => $"{t.card}:{t.ssd}"))}");
 
             if (card != null)
             {
