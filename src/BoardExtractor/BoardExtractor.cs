@@ -21,6 +21,11 @@ public class BoardExtractor
     /// Top Y-position of each cascade in pixels
     /// </summary>
     private static readonly int[] YCoords = [347, 378, 409, 440, 471, 502, 533, 564, 595, 626, 657, 688, 719, 750, 781, 812, 843, 874, 905, 936, 967, 998, 1029];
+
+    private const int cellX = 1378;
+
+    private const int cellY = 122;
+
     private readonly IReadOnlyDictionary<Card, SKBitmap> templateMap;
     /// <summary>
     /// Tile width in pixels
@@ -34,11 +39,23 @@ public class BoardExtractor
     private static IEnumerable<Tile> EnumerateTiles()
     {
         var size = new SKSizeI(TileWidth, TileHeight);
-        return YCoords.SelectMany(
+
+        yield return new Tile(
+            Move.Cell,
+            0,
+            SKRectI.Create(new SKPointI(cellX, cellY), new SKSizeI(TileHeight, TileWidth)),
+            true);
+
+        var cascadeTiles = YCoords.SelectMany(
             (y, j) => XCoords.Select((x, i) => 
-                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size))
+                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
             )
         );
+
+        foreach (var tile in cascadeTiles)
+        {
+            yield return tile;
+        }
     }
 
     /// <summary>
@@ -109,6 +126,7 @@ public class BoardExtractor
         }
 
         var sb = new StringBuilder();
+        string cellString = "";
 
         var candidates = new HashSet<Card>(templateMap.Keys);
 
@@ -119,15 +137,7 @@ public class BoardExtractor
                 break;
             }
 
-            var tileImage = new SKBitmap();
-            image.GetPixelSpan();
-
-            if (!image.ExtractSubset(tileImage, tile.Region))
-            {
-                throw new InvalidDataException("Could not extract tile image");
-            }
-
-            tileImage = tileImage.Copy();
+            var tileImage = tile.GetImage(image);
 
             var ssds = candidates
                 .Select(card => (card: card, ssd: GetSsd(tileImage, templateMap[card])))
@@ -146,12 +156,20 @@ public class BoardExtractor
                 candidates.Remove(card.Value);
             }
 
-            sb.Append(cardString);
-            var column = tile.CascadeIndex;
-            sb.Append(column == 10 ? "\n" : " ");
+            if (tile.CascadeIndex == Move.Cell)
+            {
+                cellString = cardString;
+                WriteImageFile(SKImage.FromPixels(tileImage.PeekPixels()), "/home/konrad/bla.png");
+            }
+            else
+            {
+                sb.Append(cardString);
+                var column = tile.CascadeIndex;
+                sb.Append(column == 10 ? "\n" : " ");
+            }
         }
 
-        return BoardHelper.Parse(sb.ToString());
+        return BoardHelper.Parse(sb.ToString(), cellString);
     }
 
     public static void ExtractImageTile(string imageFilePath, Func<int, string> tileNameSelector)
@@ -181,5 +199,34 @@ public class BoardExtractor
         bitmapImageStream.Flush(true);
     }
 
-    private record Tile(int CascadeIndex, int Row, SKRectI Region);
+    private record Tile(int CascadeIndex, int Row, SKRectI Region, bool Rotated)
+    {
+        internal SKBitmap GetImage(SKBitmap image)
+        {
+            var tileImage = new SKBitmap();
+            image.GetPixelSpan();
+
+            if (!image.ExtractSubset(tileImage, Region))
+            {
+                throw new InvalidDataException("Could not extract tile image");
+            }
+
+            if (Rotated)
+            {
+                var rotated = new SKBitmap(tileImage.Height, tileImage.Width);
+
+                using (var surface = new SKCanvas(rotated))
+                {
+                    surface.Translate(rotated.Width, 0);
+                    surface.RotateDegrees(90);
+                    surface.DrawBitmap(tileImage, 0, 0);
+                }
+
+                return rotated;
+            }
+
+            return tileImage.Copy();
+        }
+    }
+
 }
