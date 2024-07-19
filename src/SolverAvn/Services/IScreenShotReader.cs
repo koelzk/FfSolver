@@ -2,6 +2,7 @@ namespace SolverAvn.Services;
 
 using System.Collections.Generic;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using FfSolver;
 

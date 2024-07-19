@@ -1,54 +1,69 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:SolverAvn.ViewModels"
-        xmlns:svc="using:SolverAvn.Services"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="960" d:DesignHeight="540"
-        x:Class="SolverAvn.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="SolverAvn">
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:vm="using:SolverAvn.ViewModels"
+  xmlns:v="using:SolverAvn.Views"
+  xmlns:svc="using:SolverAvn.Services"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+  x:Class="SolverAvn.Views.MainWindow"
+  x:DataType="vm:MainWindowViewModel"
+  Icon="/Assets/avalonia-logo.ico"
+  Title="SolverAvn">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:DesignTimeMainWindowViewModel/>
-    </Design.DataContext>
+  <Design.DataContext>
+    <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at
+        App.axaml.cs) -->
+    <vm:DesignTimeMainWindowViewModel />
+  </Design.DataContext>
 
-    <StackPanel Background="#40FF0000" Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Viewbox Stretch="Uniform">
-            <Canvas Width="1920" Height="1080">
-                <Image Canvas.Left="0" Canvas.Top="0" Source="{Binding Screenshot}" />
-                <ItemsControl Classes="items" ItemsSource="{Binding Cards}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <Canvas Width="1920" Height="1080"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+  <DockPanel>
+    <!-- Bottom Toolbar -->
+    <DockPanel Margin="5" DockPanel.Dock="Bottom">
+      <Button Margin="5 0 0 0" Command="{Binding SolveCommand}" DockPanel.Dock="Right">Solve</Button>      
+      <Button Margin="5 0 0 0" Command="{Binding ReadScreenshotCommand}" DockPanel.Dock="Right">Import Screenshot...</Button>
+      <ProgressBar IsVisible="{Binding IsWorking}" IsIndeterminate="True" HorizontalAlignment="Stretch" />
+    </DockPanel>
+    <!-- Solver Result and Move List -->
+    <DockPanel IsVisible="{Binding HasSolverResult}" DockPanel.Dock="Right">
+      <StackPanel DockPanel.Dock="Top" Margin="10 10" Orientation="Horizontal">
+        <TextBlock Text="{Binding SolveResultStatus, StringFormat='Result: {0}'}"/>
+      </StackPanel>
+      <ListBox ScrollViewer.VerticalScrollBarVisibility="Auto" ItemsSource="{Binding Moves}" />
+    </DockPanel>
+    <!-- Screenshot with extracted cards -->
+    <Viewbox Stretch="Uniform">
+      <Canvas Width="1920" Height="1080">
+        <Image Canvas.Left="0" Canvas.Top="0" Source="{Binding Screenshot}" />
+        <ItemsControl Classes="items" ItemsSource="{Binding Cards}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <Canvas Width="1920" Height="1080" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
 
-                    <ItemsControl.Styles>
-                    <Style Selector="ItemsControl.items > ContentPresenter" x:DataType="svc:DetectedCard">
-                        <Setter Property="Canvas.Left" Value="{Binding Region.X}"/>
-                        <Setter Property="Canvas.Top" Value="{Binding Region.Y}"/>
-                    </Style>
-                    </ItemsControl.Styles>
+          <ItemsControl.Styles>
+            <Style Selector="ItemsControl.items > ContentPresenter"
+              x:DataType="vm:CardViewModel">
+              <Setter Property="Canvas.Left" Value="{Binding Region.X}" />
+              <Setter Property="Canvas.Top" Value="{Binding Region.Y}" />
+            </Style>
+          </ItemsControl.Styles>
 
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="svc:DetectedCard">
-                            <StackPanel Orientation="Horizontal">
-                            <Rectangle Stroke="#00FF00" Fill="#2000FF00" StrokeThickness="1" Width="{Binding Region.Width}" Height="{Binding Region.Height}"></Rectangle>
-                            <TextBlock Text="{Binding Card}" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>                  
-            </Canvas>
-        </Viewbox>
-        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    </StackPanel>
-
-    
-
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:CardViewModel">
+              <StackPanel Orientation="Horizontal">
+                <Border BorderThickness="2" BorderBrush="#C000FF00" Width="{Binding Region.Width}" Height="{Binding Region.Height}">
+                  <Viewbox Stretch="Uniform" HorizontalAlignment="Right">
+                    <v:CardView Width="29" Height="29"  DataContext="{Binding}" HorizontalAlignment="Right" />
+                  </Viewbox>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Canvas>
+    </Viewbox>
+  </DockPanel>
 </Window>

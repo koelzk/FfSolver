@@ -1,5 +1,6 @@
 using System.Text;
 using FfSolver;
+using Microsoft.VisualBasic;
 using SkiaSharp;
 
 /// <summary>
@@ -116,7 +117,7 @@ public class BoardExtractor
         return ssd;
     }
 
-    public Board DetectBoard(string imageFilePath)
+    public Board DetectBoard(string imageFilePath, ICollection<ExtractedCard>? extractedCards = null)
     {
         var image = SKBitmap.Decode(imageFilePath);
 
@@ -145,7 +146,7 @@ public class BoardExtractor
                 .OrderBy(t => t.ssd)
                 .ToList();
             var card = ssds
-                .Where(t => t.ssd <= 100_000)
+                .Where(t => t.ssd <= 200_000)
                 .Select(t => (Card?)t.card)
                 .FirstOrDefault();
 
@@ -153,13 +154,15 @@ public class BoardExtractor
 
             if (card != null)
             {
+                extractedCards?.Add(new ExtractedCard(
+                    new ExtractedCardRegion(tile.Region.Left, tile.Region.Top, tile.Region.Width, tile.Region.Height),
+                    card.Value));
                 candidates.Remove(card.Value);
             }
 
             if (tile.CascadeIndex == Move.Cell)
             {
                 cellString = cardString;
-                WriteImageFile(SKImage.FromPixels(tileImage.PeekPixels()), "/home/konrad/bla.png");
             }
             else
             {
@@ -228,5 +231,8 @@ public class BoardExtractor
             return tileImage.Copy();
         }
     }
-
 }
+
+public record ExtractedCardRegion(int Left, int Top, int Width, int Height);
+
+public record ExtractedCard(ExtractedCardRegion Region, Card Card);

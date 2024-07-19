@@ -1,31 +1,150 @@
-﻿using System;
+﻿namespace SolverAvn.ViewModels;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Avalonia;
+using System.Reactive;
+using System.Threading.Tasks;
 using Avalonia.Media;
+using FfSolver;
+using ReactiveUI;
 using SolverAvn.Services;
 
-namespace SolverAvn.ViewModels;
-
-public class MainWindowViewModel(IScreenshotReader screenshotReader) : ViewModelBase
+public class MainWindowViewModel : ViewModelBase
 {
-    protected IScreenshotReader ScreenshotReader = screenshotReader;
+    protected readonly IScreenshotReader ScreenshotReader;
+    protected readonly IBoardSolver BoardSolver;
+    protected readonly IImageFilePicker ImageFilePicker;
 
-    protected ScreenshotReaderResult? Result = null;
+    private ScreenshotReaderResult? readResult = null;
 
-    public string Greeting { get; set; } = "Welcome to Avalonia!";
+    private SolverResult? solverResult = null;
+    private bool isWorking = false;
+    private IReadOnlyCollection<CardViewModel> cards = new List<CardViewModel>();
 
-    public IImage? Screenshot => Result?.Screenshot;
+    public MainWindowViewModel(
+        IScreenshotReader screenshotReader,
+        IBoardSolver boardSolver,
+        IImageFilePicker imageFilePicker)
+    {
+        ScreenshotReader = screenshotReader;
+        BoardSolver = boardSolver;
+        ImageFilePicker = imageFilePicker;
 
-    public IReadOnlyCollection<DetectedCard> Cards =>
-        Result?.Cards ?? Array.Empty<DetectedCard>();
+        ReadScreenshotCommand = CommandHelper.Create(ReadScreenshot);
+        SolveCommand = CommandHelper.Create(
+            Solve,
+            this.WhenAnyValue(vm => vm.CanSolve, value => value == true));
+    }
+
+    public bool CanSolve => ReadResult?.Board != null;
+
+    public IImage? Screenshot => ReadResult?.Screenshot;
+
+    public IReadOnlyCollection<CardViewModel> Cards
+    {
+        get => cards;
+        protected set => this.RaiseAndSetIfChanged(ref cards, value);
+    }
+
+    public IReadOnlyCollection<Move> Moves => SolverResult?.Moves ?? Array.Empty<Move>();
+
+    public bool IsWorking
+    {
+        get => isWorking;
+        private set => this.RaiseAndSetIfChanged(ref isWorking, value);
+    }
+
+    public bool HasSolverResult => SolveResultStatus != null;
+
+    public SolveResultStatus? SolveResultStatus => SolverResult?.Status;
+
+    public ReactiveCommand<Unit, Unit> ReadScreenshotCommand { get; }
+
+    public ReactiveCommand<Unit, Unit> SolveCommand { get; }
+
+    protected ScreenshotReaderResult? ReadResult
+    {
+        get => readResult;
+        set
+        {
+            if (value == null)
+            {
+                throw new ArgumentNullException(nameof(ReadResult));
+            }
+
+            if (value == readResult)
+            {
+                return;
+            }
+
+            this.RaiseAndSetIfChanged(ref readResult, value);
+            Cards = value.Cards.Select(c => new CardViewModel(c)).ToList();
+            this.RaisePropertyChanged(nameof(Screenshot));
+            this.RaisePropertyChanged(nameof(CanSolve));
+        }
+    }
+
+    protected SolverResult? SolverResult
+    {
+        get => solverResult;
+        set
+        {
+            if (solverResult == value)
+            {
+                return;
+            }
+
+            this.RaiseAndSetIfChanged(ref solverResult, value);
+            this.RaisePropertyChanged(nameof(HasSolverResult));
+            this.RaisePropertyChanged(nameof(SolveResultStatus));
+            this.RaisePropertyChanged(nameof(Moves));
+        }
+    }
+
+    private async Task Solve()
+    {
+        var board = ReadResult?.Board;
+
+        if (board == null)
+        {
+            return;
+        }
+
+        SolverResult = await PerformWork(() => BoardSolver.SolveBoard(board));
+    }
+
+    private async Task ReadScreenshot()
+    {
+        var imageFilePath = await ImageFilePicker.OpenFileDialogAsync();
+        if (imageFilePath == null)
+        {
+            return;
+        }
+
+        ReadResult = await PerformWork(() => ScreenshotReader.ReadScreenshot(imageFilePath));
+    }
+
+    private async Task<T> PerformWork<T>(Func<T> action)
+    {
+        try
+        {
+            IsWorking = true;
+            return await Task.Run(action); 
+        }
+        finally
+        {
+            IsWorking = false;
+        }
+    }    
 }
 
 public class DesignTimeMainWindowViewModel : MainWindowViewModel
 {
-    public DesignTimeMainWindowViewModel() : base(new MockScreenshotReader())
+    public DesignTimeMainWindowViewModel()
+        : base(new MockScreenshotReader(), new MockBoardSolver(), new MockImageFilePicker())
     {
-        Greeting = "Mock";
-        Result = ScreenshotReader.ReadScreenshot("");
+        ReadResult = ScreenshotReader.ReadScreenshot("");
+        SolverResult = BoardSolver.SolveBoard(ReadResult.Board);
     }
 }

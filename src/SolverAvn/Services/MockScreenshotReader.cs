@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -8,21 +8,24 @@ namespace SolverAvn.Services;
 
 public class MockScreenshotReader : IScreenshotReader
 {
+    private static readonly int[] XCoords = [178, 323, 467, 612, 757, 1046, 1191, 1336, 1480, 1625];
+    private static readonly int[] YCoords = [347, 378, 409, 440, 471, 502, 533];
+
     public ScreenshotReaderResult ReadScreenshot(string imageFilePath)
     {
         var screenshot = new RenderTargetBitmap(new PixelSize(1920, 1080));
 
         using var dc = screenshot.CreateDrawingContext();
-        dc.DrawEllipse(new SolidColorBrush(0xFFFF0000), new Pen(), new Rect(screenshot.Size));
+        dc.FillRectangle(new SolidColorBrush(0xFF808080), new Rect(screenshot.Size));
+
+        var board = BoardHelper.CreateRandomFromSeed(1337);
+
+        var cards = YCoords.SelectMany((y, j) => XCoords.Select((x, i) => 
+            new DetectedCard(new Rect(x, y, 118, 29), board.Cascades[i > 4 ? i + 1 : i][j])));
 
         return new ScreenshotReaderResult(
             screenshot,
-            BoardHelper.CreateRandomFromSeed(1337),
-            new List<DetectedCard>
-            {
-                new DetectedCard(new Rect(178, 347, 118, 29), new Card(Card.JackRank, Suit.Green)),
-                new DetectedCard(new Rect(178, 377, 118, 29), new Card(7, Suit.Red)),
-                new DetectedCard(new Rect(178, 347, 118, 29), new Card(10, Suit.Yellow)),
-            });
+            board,
+            cards.ToList());
     }
 }
