@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -26,7 +26,7 @@ public class ImageFilePicker : IImageFilePicker
         });
 
         return files.Count > 0
-            ? files[0].Path.AbsolutePath
+            ? files[0].Path.LocalPath
             : null;
     }
 
