@@ -1,4 +1,4 @@
-namespace SolverAvn.Services;
+﻿namespace SolverAvn.Services;
 
 using System.Collections.Generic;
 using FfSolver;

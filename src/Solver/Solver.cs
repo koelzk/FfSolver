@@ -48,7 +48,7 @@ public class Solver
                 {
                     break;
                 }
-            }   
+            }
 
             var moves = current.EnumerateMoves().ToList();
 
@@ -116,5 +116,5 @@ public class Solver
         }
 
         return moves;
-    }    
+    }
 }

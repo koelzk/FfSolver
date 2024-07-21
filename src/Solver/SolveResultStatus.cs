@@ -1,4 +1,4 @@
-
+﻿
 namespace FfSolver;
 
 public enum SolveResultStatus

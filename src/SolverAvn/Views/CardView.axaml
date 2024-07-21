@@ -9,13 +9,10 @@
   x:DataType="vm:CardViewModel">
 
   <Design.DataContext>
-    <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at
-        App.axaml.cs) -->
     <vm:CardViewModel />
   </Design.DataContext>
 
-  <Border Background="{Binding Background}" CornerRadius="10">
+  <Border BorderBrush="{Binding Foreground}" BorderThickness="2" Background="{Binding Background}" CornerRadius="10">
     <TextBlock Foreground="{Binding Foreground}" FontSize="18" FontWeight="600" Text="{Binding Label}" HorizontalAlignment="Center" VerticalAlignment="Center" />
   </Border>
 </UserControl>

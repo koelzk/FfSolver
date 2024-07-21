@@ -1,4 +1,4 @@
-// The following code has been translated from the original code written
+﻿// The following code has been translated from the original code written
 // by David Blackman and Sebastiano Vigna (see http://xoshiro.di.unimi.it/xoshiro256plusplus.c).
 
 namespace FfSolver;

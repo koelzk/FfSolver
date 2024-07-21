@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Media;
 using FfSolver;
 using ReactiveUI;
@@ -57,7 +57,8 @@ public class CardViewModel : ViewModelBase
             return card.Rank.ToString();
         }
 
-        return card.Rank switch {
+        return card.Rank switch
+        {
             Card.AceRank => "A",
             Card.JackRank => "J",
             Card.QueenRank => "Q",
@@ -73,7 +74,7 @@ public class CardViewModel : ViewModelBase
             Suit.MajorArc => Color.FromUInt32(0xff282523),
             _ => Color.FromUInt32(0xfff8e3c1)
         };
-    }    
+    }
 
     private Color GetForegroundColor()
     {

@@ -15,7 +15,7 @@ public readonly struct Card : IEquatable<Card>
     public const int MinorArcMinRank = 2;
     public const int MinorArcMaxRank = KingRank;
 
-    public const int MajorArcMinRank = 0;    
+    public const int MajorArcMinRank = 0;
 
     public const int MajorArcMaxRank = 21;
 
@@ -24,7 +24,7 @@ public readonly struct Card : IEquatable<Card>
 
     private readonly byte value;
 
-    public Card(int rank, Suit suit) => 
+    public Card(int rank, Suit suit) =>
         value =
             (suit == Suit.MajorArc && (rank < MajorArcMinRank || rank > MajorArcMaxRank)) ||
             (suit != Suit.MajorArc && (rank < MinorArcMinRank || rank > MinorArcMaxRank))

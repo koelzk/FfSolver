@@ -13,7 +13,7 @@ public readonly struct Move
     public Move(int from, int to, int count)
     {
         From = from > Foundation && from < 11 ? from : throw new ArgumentOutOfRangeException(nameof(from));
-        To = to >= Foundation && to < 11  && to != from ? to : throw new ArgumentOutOfRangeException(nameof(to));
+        To = to >= Foundation && to < 11 && to != from ? to : throw new ArgumentOutOfRangeException(nameof(to));
         Count = count > 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
     }
 

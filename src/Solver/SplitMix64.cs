@@ -1,4 +1,4 @@
-// The following code has been translated from the original code written
+﻿// The following code has been translated from the original code written
 // by Sebastiano Vigna (see https://prng.di.unimi.it/splitmix64.c).
 
 namespace FfSolver;

@@ -1,4 +1,4 @@
-namespace FfSolver.Tests;
+﻿namespace FfSolver.Tests;
 
 public class SolverTests
 {

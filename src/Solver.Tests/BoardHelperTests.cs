@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace FfSolver.Tests;
 
@@ -135,7 +135,7 @@ public class BoardHelperTests
                 solved++;
             }
         }
-        sw.Stop();        
+        sw.Stop();
         Console.WriteLine($"{solved} solved. Took {sw.Elapsed.TotalSeconds:F3} sec");
-    }    
+    }
 }

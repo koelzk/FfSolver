@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -20,7 +20,7 @@ public class MockScreenshotReader : IScreenshotReader
 
         var board = BoardHelper.CreateRandomFromSeed(1337);
 
-        var cards = YCoords.SelectMany((y, j) => XCoords.Select((x, i) => 
+        var cards = YCoords.SelectMany((y, j) => XCoords.Select((x, i) =>
             new DetectedCard(new Rect(x, y, 118, 29), board.Cascades[i > 4 ? i + 1 : i][j])));
 
         return new ScreenshotReaderResult(

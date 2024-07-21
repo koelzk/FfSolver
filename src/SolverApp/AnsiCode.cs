@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 
 namespace SolverApp;
 
@@ -29,7 +29,7 @@ public static class AnsiStyle
     public const string Regular = "0;3";
     public const string Bold = "1;3";
     public const string Intense = "1;9";
-    public const string Background = "4";    
+    public const string Background = "4";
 }
 
 public enum AnsiColor

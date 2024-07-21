@@ -17,8 +17,8 @@ public class MainWindowViewModel : ViewModelBase
     protected readonly IImageFilePicker ImageFilePicker;
 
     private ScreenshotReaderResult? readResult = null;
-
     private SolverResult? solverResult = null;
+
     private bool isWorking = false;
     private IReadOnlyCollection<CardViewModel> cards = new List<CardViewModel>();
 
@@ -130,13 +130,13 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             IsWorking = true;
-            return await Task.Run(action); 
+            return await Task.Run(action);
         }
         finally
         {
             IsWorking = false;
         }
-    }    
+    }
 }
 
 public class DesignTimeMainWindowViewModel : MainWindowViewModel

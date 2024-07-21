@@ -70,7 +70,7 @@ public class Board : IEquatable<Board>
 
     public void NormalizeOrder()
     {
-        var comparer = Comparer<List<Card>>.Create((a,b) => BoardNormalization.CascadeRank(a).CompareTo(BoardNormalization.CascadeRank(b)));
+        var comparer = Comparer<List<Card>>.Create((a, b) => BoardNormalization.CascadeRank(a).CompareTo(BoardNormalization.CascadeRank(b)));
         Array.Sort(cascades, comparer);
 
         if (majorFdnLow == majorFdnHigh)
@@ -80,7 +80,7 @@ public class Board : IEquatable<Board>
         }
     }
 
-    public void Normalize()    
+    public void Normalize()
     {
         ApplyAutoMoves();
         NormalizeOrder();
@@ -126,7 +126,7 @@ public class Board : IEquatable<Board>
                     continue;
                 }
 
-                
+
                 if (cascades[j].Count == 0 || cascades[i].Last().CanPlaceOn(cascades[j].Last()))
                 {
                     for (var k = stackSize; k > 0; k--)
@@ -180,7 +180,7 @@ public class Board : IEquatable<Board>
             }
 
             return;
-        }        
+        }
         else if (move.To == Move.Foundation) // Move from cascade or cell to foundation:
         {
             if (move.From == Move.Cell)
@@ -212,7 +212,7 @@ public class Board : IEquatable<Board>
             return;
         }
         else // Move from cascade to cell:
-        {            
+        {
             Debug.Assert(move.From >= 0 && move.From < CascadeCount);
             Debug.Assert(!cell.HasValue);
 
@@ -235,7 +235,7 @@ public class Board : IEquatable<Board>
             {
                 majorFdnLow++;
             }
-            
+
             if (removedCard.Rank == majorFdnHigh - 1)
             {
                 majorFdnHigh--;
@@ -254,7 +254,7 @@ public class Board : IEquatable<Board>
         var score = 0;
 
         score -= cascades.Sum(cc => cc.Count);
-        score += cascades.Select(cc => 
+        score += cascades.Select(cc =>
         {
             var stack = GetStackSize(cc);
             if (cc.Count == 0)
@@ -318,7 +318,7 @@ public class Board : IEquatable<Board>
     {
         var sb = new StringBuilder();
         var fdnStrings = Enumerable.Range(0, 4)
-            .Select(i => $"{(colorFdns[i] < 2 ? "-" : new Card(colorFdns[i], (Suit)i).ToString()), 4}");
+            .Select(i => $"{(colorFdns[i] < 2 ? "-" : new Card(colorFdns[i], (Suit)i).ToString()),4}");
 
         var arcanaLowFdnString = majorFdnLow > -1 ? majorFdnLow.ToString() : "-";
         var arcanaHighFdnString = majorFdnHigh < 22 ? majorFdnHigh.ToString() : "-";
@@ -382,7 +382,7 @@ public class Board : IEquatable<Board>
 
         if (lowFdns.TryGetValue(4, out var arcLow))
         {
-            majorFdnLow =  (sbyte)arcLow;
+            majorFdnLow = (sbyte)arcLow;
             majorFdnHigh = (sbyte)(allCards.Where(c => c.Suit == Suit.MajorArc).Select(c => c.Rank).Max() + 1);
         }
         else

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using FfSolver;
 using Microsoft.VisualBasic;
 using SkiaSharp;
@@ -48,7 +48,7 @@ public class BoardExtractor
             true);
 
         var cascadeTiles = YCoords.SelectMany(
-            (y, j) => XCoords.Select((x, i) => 
+            (y, j) => XCoords.Select((x, i) =>
                 new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
             )
         );

@@ -1,4 +1,4 @@
-namespace FfSolver;
+﻿namespace FfSolver;
 
 public class BoardNode
 {
