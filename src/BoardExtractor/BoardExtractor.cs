@@ -1,7 +1,8 @@
 ﻿using System.Text;
 using FfSolver;
-using Microsoft.VisualBasic;
 using SkiaSharp;
+
+namespace BoardExtractor;
 
 /// <summary>
 /// Reads the board state from a screenshot of Fortune's Foundation captured at 1920x1080 resolution.
@@ -37,28 +38,6 @@ public class BoardExtractor
     /// </summary>
     private const int TileHeight = 29;
 
-    private static IEnumerable<Tile> EnumerateTiles()
-    {
-        var size = new SKSizeI(TileWidth, TileHeight);
-
-        yield return new Tile(
-            Move.Cell,
-            0,
-            SKRectI.Create(new SKPointI(cellX, cellY), new SKSizeI(TileHeight, TileWidth)),
-            true);
-
-        var cascadeTiles = YCoords.SelectMany(
-            (y, j) => XCoords.Select((x, i) =>
-                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
-            )
-        );
-
-        foreach (var tile in cascadeTiles)
-        {
-            yield return tile;
-        }
-    }
-
     /// <summary>
     /// Initializes a new instance of <see cref="BoardExtractor"/>.
     /// </summary>
@@ -68,62 +47,26 @@ public class BoardExtractor
         templateMap = LoadTemplates(templateDirPath);
     }
 
-    private IReadOnlyDictionary<Card, SKBitmap> LoadTemplates(string templateDirPath)
-    {
-        var templateFiles = Directory.EnumerateFiles(templateDirPath);
-
-        var map = templateFiles.ToDictionary(
-            filename => BoardHelper.ParseCard(Path.GetFileNameWithoutExtension(filename))
-                ?? throw new ArgumentOutOfRangeException(nameof(filename), filename, "Unexpected file name"),
-            filename => SKBitmap.Decode(filename));
-
-        return map;
-    }
-
-    private static long GetSsd(SKBitmap a, SKBitmap b)
-    {
-        if (a is null)
-        {
-            throw new ArgumentNullException(nameof(a));
-        }
-
-        if (b is null)
-        {
-            throw new ArgumentNullException(nameof(b));
-        }
-
-        if (a.Width != b.Width || a.Height != b.Height || a.BytesPerPixel != b.BytesPerPixel)
-        {
-            throw new ArgumentException("Images must have same width, height and bytes per pixel", nameof(b));
-        }
-
-        long ssd = 0;
-
-        var spanA = a.GetPixelSpan();
-        var spanB = b.GetPixelSpan();
-
-        for (var i = 0; i < spanA.Length;)
-        {
-            for (var j = 0; j < 3; j++)
-            {
-                var diff = spanA[i] - spanB[i];
-                ssd += diff * diff;
-                i++;
-            }
-
-            i++; // Skip Alpha
-        }
-
-        return ssd;
-    }
-
+    /// <summary>
+    /// Extracts a board state from the specified image file path and optionally returns
+    /// card extraction information.
+    /// </summary>
+    /// <param name="imageFilePath">Path to image file</param>
+    /// <param name="extractedCards">If specified, this list is filled with card extraction information</param>
+    /// <returns>Board state</returns>
+    /// <exception cref="BoardExtractorException">if no valid board state could be extracted</exception>
     public Board DetectBoard(string imageFilePath, ICollection<ExtractedCard>? extractedCards = null)
     {
         var image = SKBitmap.Decode(imageFilePath);
 
+        if (image == null)
+        {
+            throw new BoardExtractorException("Could not load image from file.");
+        }
+
         if (image.Width != 1920 || image.Height != 1080)
         {
-            throw new ArgumentException("Image resolution is not 1920x1080.", nameof(imageFilePath));
+            throw new BoardExtractorException("Image resolution is not 1920x1080.");
         }
 
         var sb = new StringBuilder();
@@ -172,7 +115,14 @@ public class BoardExtractor
             }
         }
 
-        return BoardHelper.Parse(sb.ToString(), cellString);
+        try
+        {
+            return BoardHelper.Parse(sb.ToString(), cellString);
+        }
+        catch (Exception e)
+        {
+            throw new BoardExtractorException("Could not extract valid board state", e);
+        }
     }
 
     public static void ExtractImageTile(string imageFilePath, Func<int, string> tileNameSelector)
@@ -192,6 +142,70 @@ public class BoardExtractor
 
             WriteImageFile(tileImage, imagePath);
         }
+    }
+
+    private IReadOnlyDictionary<Card, SKBitmap> LoadTemplates(string templateDirPath)
+    {
+        var templateFiles = Directory.EnumerateFiles(templateDirPath);
+
+        var map = templateFiles.ToDictionary(
+            filename => BoardHelper.ParseCard(Path.GetFileNameWithoutExtension(filename))
+                ?? throw new ArgumentOutOfRangeException(nameof(filename), filename, "Unexpected file name"),
+            filename => SKBitmap.Decode(filename));
+
+        return map;
+    }
+
+    private static IEnumerable<Tile> EnumerateTiles()
+    {
+        var size = new SKSizeI(TileWidth, TileHeight);
+
+        yield return new Tile(
+            Move.Cell,
+            0,
+            SKRectI.Create(new SKPointI(cellX, cellY), new SKSizeI(TileHeight, TileWidth)),
+            true);
+
+        var cascadeTiles = YCoords.SelectMany(
+            (y, j) => XCoords.Select((x, i) =>
+                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
+            )
+        );
+
+        foreach (var tile in cascadeTiles)
+        {
+            yield return tile;
+        }
+    }
+
+    private static long GetSsd(SKBitmap a, SKBitmap b)
+    {
+        ArgumentNullException.ThrowIfNull(a, nameof(a));
+        ArgumentNullException.ThrowIfNull(b, nameof(b));
+
+        if (a.Width != b.Width || a.Height != b.Height || a.BytesPerPixel != b.BytesPerPixel)
+        {
+            throw new ArgumentException("Images must have same width, height and bytes per pixel", nameof(b));
+        }
+
+        long ssd = 0;
+
+        var spanA = a.GetPixelSpan();
+        var spanB = b.GetPixelSpan();
+
+        for (var i = 0; i < spanA.Length;)
+        {
+            for (var j = 0; j < 3; j++)
+            {
+                var diff = spanA[i] - spanB[i];
+                ssd += diff * diff;
+                i++;
+            }
+
+            i++; // Skip Alpha
+        }
+
+        return ssd;
     }
 
     private static void WriteImageFile(SKImage tileImage, string imagePath)

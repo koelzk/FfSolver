@@ -19,14 +19,18 @@
   </Design.DataContext>
 
   <DockPanel>
-    <!-- Bottom Toolbar -->
-    <DockPanel Margin="5" DockPanel.Dock="Bottom">
-      <Button Margin="5 0 0 0" Command="{Binding SolveCommand}" DockPanel.Dock="Right">Solve</Button>      
-      <Button Margin="5 0 0 0" Command="{Binding ReadScreenshotCommand}" DockPanel.Dock="Right">Import Screenshot...</Button>
-      <ProgressBar IsVisible="{Binding IsWorking}" IsIndeterminate="True" HorizontalAlignment="Stretch" />
-    </DockPanel>
+    <!-- Top Toolbar -->
+    <StackPanel Orientation="Vertical" DockPanel.Dock="Top">
+      <DockPanel Margin="5">
+        <Button Margin="5 0 0 0" IsVisible="{Binding CanCancel}" Command="{Binding CancelCommand}" DockPanel.Dock="Right">Stop</Button>
+        <Button Margin="5 0 0 0" Command="{Binding SolveCommand}" DockPanel.Dock="Right">Solve</Button>      
+        <Button Margin="5 0 0 0" Command="{Binding ReadScreenshotCommand}" DockPanel.Dock="Right">Import Screenshot...</Button>
+        <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" />
+      </DockPanel>
+      <ProgressBar IsVisible="{Binding IsWorking}" IsIndeterminate="False" Value="{Binding ProgressInPercent}" HorizontalAlignment="Stretch" />      
+    </StackPanel>    
     <!-- Solver Result and Move List -->
-    <DockPanel IsVisible="{Binding HasSolverResult}" DockPanel.Dock="Right">
+    <DockPanel MinWidth="350" IsVisible="{Binding HasSolverResult}" DockPanel.Dock="Right">
       <StackPanel DockPanel.Dock="Top" Margin="10 10" Orientation="Horizontal">
         <TextBlock Text="{Binding SolveResultStatus, StringFormat='Result: {0}'}"/>
       </StackPanel>

@@ -38,7 +38,7 @@ public class Program
         {
             // Read board state from image:
             var appPath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location) ?? string.Empty;
-            var boardExtractor = new BoardExtractor(Path.Combine(appPath, "templates"));
+            var boardExtractor = new BoardExtractor.BoardExtractor(Path.Combine(appPath, "templates"));
             board = boardExtractor.DetectBoard(options.InputFilePath);
         }
 

@@ -22,7 +22,7 @@ public partial class App : Application
             {
                 DataContext = new MainWindowViewModel(
                     new ScreenshotReader(),
-                    new BoardSolver(),
+                    new BoardSolver(100_000, 100),
                     new ImageFilePicker()),
             };
         }
