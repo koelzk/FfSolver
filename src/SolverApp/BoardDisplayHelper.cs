@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using FfSolver;
 using SolverApp;
 
@@ -29,7 +29,7 @@ public static class BoardDisplayHelper
 
         var suitString = "♥♣♠♦ "[(int)card.Suit];
 
-        return AnsiColorStringHelper.GetString($"{card.GetRankString()+suitString, -3} ", styles);
+        return AnsiColorStringHelper.GetString($"{card.GetRankString() + suitString,-3} ", styles);
     }
 
     public static string ToColorString(Card? card) => card.HasValue
@@ -54,6 +54,6 @@ public static class BoardDisplayHelper
             sb.AppendLine(string.Join(" ", rowString));
         }
 
-        return sb.ToString();        
+        return sb.ToString();
     }
 }

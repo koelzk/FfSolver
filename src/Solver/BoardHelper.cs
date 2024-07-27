@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
 namespace FfSolver;
 
@@ -16,7 +16,7 @@ public static class BoardHelper
     /// <returns></returns>
     public static Board Parse(string cascadesString, string cellString = "")
     {
-        var cardStrings = cascadesString.Split(new[] {' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var cardStrings = cascadesString.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var cascades = Enumerable.Range(0, Board.CascadeCount).Select(i => new List<Card>()).ToArray();
 
         var index = 0;
@@ -34,7 +34,7 @@ public static class BoardHelper
             {
                 throw new FormatException($"Could not parse card string '{cardString}' in column {i}, row {j}.");
             }
-            
+
             if (c is Card card)
             {
                 if (cascades[i].Count < j)
@@ -96,7 +96,8 @@ public static class BoardHelper
             throw new FormatException("Invalid card");
         }
 
-        var suit = match.Groups["suit"].Value.ToUpper() switch {
+        var suit = match.Groups["suit"].Value.ToUpper() switch
+        {
             "R" => Suit.Red,
             "G" => Suit.Green,
             "B" => Suit.Blue,
@@ -152,6 +153,6 @@ public static class BoardHelper
             .ToList();
 
         cascades.Insert(5, new List<Card>());
-        return new Board(cascades);        
+        return new Board(cascades);
     }
 }

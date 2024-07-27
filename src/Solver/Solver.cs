@@ -17,6 +17,18 @@ public class Solver
 
     public SolveResult Solve(int maxIterations = 500_000, int maxSteps = 100, bool returnOnSolve = true)
     {
+        var cts = new CancellationTokenSource();
+        return Solve(p =>
+        {
+            if (returnOnSolve && p.Moves != null)
+            {
+                cts.Cancel();
+            }
+        }, maxIterations, maxSteps, cts.Token);
+    }
+
+    public SolveResult Solve(Action<SolverProgress>? progressCallback, int maxIterations = 500_000, int maxSteps = 100, CancellationToken cancellationToken = default)
+    {
         var board = new Board(start);
         board.ApplyAutoMoves();
 
@@ -25,6 +37,7 @@ public class Solver
 
         var currentMaxSteps = maxSteps;
         var solutionNode = default(BoardNode?);
+        List<Move>? solutionMoves = default;
         int iteration;
 
         for (iteration = 0; iteration < maxIterations; iteration++)
@@ -34,25 +47,28 @@ public class Solver
                 return new SolveResult(SolveResultStatus.NoSolution, iteration);
             }
 
+            if (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+
             var currentNode = queue.Dequeue();
             var current = currentNode.Board;
+            var foundSolution = current.IsGameWon;
 
-            if (current.IsGameWon)
+            if (foundSolution && (solutionNode == null || solutionNode.Step > currentNode.Step))
             {
-                solutionNode = solutionNode == null || solutionNode.Step > currentNode.Step
-                    ? currentNode
-                    : solutionNode;
-                currentMaxSteps = solutionNode.Step - 1;
+                solutionNode = currentNode;
+                solutionMoves = AssembleMoves(solutionNode.Board);
+                currentMaxSteps = solutionMoves.Count - 1;
+            }
 
-                if (returnOnSolve)
-                {
-                    break;
-                }
-            }   
+            if (foundSolution || iteration % 500 == 0)
+            {
+                progressCallback?.Invoke(new SolverProgress(iteration, solutionMoves));
+            }
 
-            var moves = current.EnumerateMoves().ToList();
-
-            foreach (var move in moves)
+            foreach (var move in current.EnumerateMoves())
             {
                 AddNode(currentNode, move, currentMaxSteps);
             }
@@ -116,5 +132,7 @@ public class Solver
         }
 
         return moves;
-    }    
+    }
 }
+
+public record SolverProgress(int Iteration, IReadOnlyList<Move>? Moves = null);

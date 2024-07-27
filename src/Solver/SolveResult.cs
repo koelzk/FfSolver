@@ -1,4 +1,4 @@
-
+﻿
 namespace FfSolver;
 
 public class SolveResult
@@ -16,5 +16,5 @@ public class SolveResult
 
     public int Iteration { get; }
 
-    public SolveResultStatus Status { get; } 
+    public SolveResultStatus Status { get; }
 }

@@ -1,6 +1,8 @@
-using System.Text;
+﻿using System.Text;
 using FfSolver;
 using SkiaSharp;
+
+namespace BoardExtractor;
 
 /// <summary>
 /// Reads the board state from a screenshot of Fortune's Foundation captured at 1920x1080 resolution.
@@ -36,28 +38,6 @@ public class BoardExtractor
     /// </summary>
     private const int TileHeight = 29;
 
-    private static IEnumerable<Tile> EnumerateTiles()
-    {
-        var size = new SKSizeI(TileWidth, TileHeight);
-
-        yield return new Tile(
-            Move.Cell,
-            0,
-            SKRectI.Create(new SKPointI(cellX, cellY), new SKSizeI(TileHeight, TileWidth)),
-            true);
-
-        var cascadeTiles = YCoords.SelectMany(
-            (y, j) => XCoords.Select((x, i) => 
-                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
-            )
-        );
-
-        foreach (var tile in cascadeTiles)
-        {
-            yield return tile;
-        }
-    }
-
     /// <summary>
     /// Initializes a new instance of <see cref="BoardExtractor"/>.
     /// </summary>
@@ -65,6 +45,103 @@ public class BoardExtractor
     public BoardExtractor(string templateDirPath)
     {
         templateMap = LoadTemplates(templateDirPath);
+    }
+
+    /// <summary>
+    /// Extracts a board state from the specified image file path and optionally returns
+    /// card extraction information.
+    /// </summary>
+    /// <param name="imageFilePath">Path to image file</param>
+    /// <param name="extractedCards">If specified, this list is filled with card extraction information</param>
+    /// <returns>Board state</returns>
+    /// <exception cref="BoardExtractorException">if no valid board state could be extracted</exception>
+    public Board DetectBoard(string imageFilePath, ICollection<ExtractedCard>? extractedCards = null)
+    {
+        var image = SKBitmap.Decode(imageFilePath);
+
+        if (image == null)
+        {
+            throw new BoardExtractorException("Could not load image from file.");
+        }
+
+        if (image.Width != 1920 || image.Height != 1080)
+        {
+            throw new BoardExtractorException("Image resolution is not 1920x1080.");
+        }
+
+        var sb = new StringBuilder();
+        string cellString = "";
+
+        var candidates = new HashSet<Card>(templateMap.Keys);
+
+        foreach (var tile in EnumerateTiles())
+        {
+            if (candidates.Count == 0)
+            {
+                break;
+            }
+
+            var tileImage = tile.GetImage(image);
+
+            var ssds = candidates
+                .Select(card => (card: card, ssd: GetSsd(tileImage, templateMap[card])))
+                .TakeUntil(t => t.ssd > 0)
+                .OrderBy(t => t.ssd)
+                .ToList();
+            var card = ssds
+                .Where(t => t.ssd <= 200_000)
+                .Select(t => (Card?)t.card)
+                .FirstOrDefault();
+
+            var cardString = card?.ToString() ?? "-";
+
+            if (card != null)
+            {
+                extractedCards?.Add(new ExtractedCard(
+                    new ExtractedCardRegion(tile.Region.Left, tile.Region.Top, tile.Region.Width, tile.Region.Height),
+                    card.Value));
+                candidates.Remove(card.Value);
+            }
+
+            if (tile.CascadeIndex == Move.Cell)
+            {
+                cellString = cardString;
+            }
+            else
+            {
+                sb.Append(cardString);
+                var column = tile.CascadeIndex;
+                sb.Append(column == 10 ? "\n" : " ");
+            }
+        }
+
+        try
+        {
+            return BoardHelper.Parse(sb.ToString(), cellString);
+        }
+        catch (Exception e)
+        {
+            throw new BoardExtractorException("Could not extract valid board state", e);
+        }
+    }
+
+    public static void ExtractImageTile(string imageFilePath, Func<int, string> tileNameSelector)
+    {
+        var image = SKImage.FromEncodedData(imageFilePath);
+
+        if (image.Width != 1920 || image.Height != 1080)
+        {
+            throw new ArgumentException("Image resolution is not 1920x1080.", nameof(imageFilePath));
+        }
+
+        foreach (var (tile, index) in EnumerateTiles().Select(Tuple.Create<Tile, int>))
+        {
+            var tileImage = image.Subset(tile.Region);
+            var name = tileNameSelector?.Invoke(index) ?? index.ToString();
+            var imagePath = $"{name}.png";
+
+            WriteImageFile(tileImage, imagePath);
+        }
     }
 
     private IReadOnlyDictionary<Card, SKBitmap> LoadTemplates(string templateDirPath)
@@ -79,17 +156,32 @@ public class BoardExtractor
         return map;
     }
 
+    private static IEnumerable<Tile> EnumerateTiles()
+    {
+        var size = new SKSizeI(TileWidth, TileHeight);
+
+        yield return new Tile(
+            Move.Cell,
+            0,
+            SKRectI.Create(new SKPointI(cellX, cellY), new SKSizeI(TileHeight, TileWidth)),
+            true);
+
+        var cascadeTiles = YCoords.SelectMany(
+            (y, j) => XCoords.Select((x, i) =>
+                new Tile(i, j, SKRectI.Create(new SKPointI(x, y), size), false)
+            )
+        );
+
+        foreach (var tile in cascadeTiles)
+        {
+            yield return tile;
+        }
+    }
+
     private static long GetSsd(SKBitmap a, SKBitmap b)
     {
-        if (a is null)
-        {
-            throw new ArgumentNullException(nameof(a));
-        }
-
-        if (b is null)
-        {
-            throw new ArgumentNullException(nameof(b));
-        }
+        ArgumentNullException.ThrowIfNull(a, nameof(a));
+        ArgumentNullException.ThrowIfNull(b, nameof(b));
 
         if (a.Width != b.Width || a.Height != b.Height || a.BytesPerPixel != b.BytesPerPixel)
         {
@@ -114,81 +206,6 @@ public class BoardExtractor
         }
 
         return ssd;
-    }
-
-    public Board DetectBoard(string imageFilePath)
-    {
-        var image = SKBitmap.Decode(imageFilePath);
-
-        if (image.Width != 1920 || image.Height != 1080)
-        {
-            throw new ArgumentException("Image resolution is not 1920x1080.", nameof(imageFilePath));
-        }
-
-        var sb = new StringBuilder();
-        string cellString = "";
-
-        var candidates = new HashSet<Card>(templateMap.Keys);
-
-        foreach (var tile in EnumerateTiles())
-        {
-            if (candidates.Count == 0)
-            {
-                break;
-            }
-
-            var tileImage = tile.GetImage(image);
-
-            var ssds = candidates
-                .Select(card => (card: card, ssd: GetSsd(tileImage, templateMap[card])))
-                .TakeUntil(t => t.ssd > 0)
-                .OrderBy(t => t.ssd)
-                .ToList();
-            var card = ssds
-                .Where(t => t.ssd <= 100_000)
-                .Select(t => (Card?)t.card)
-                .FirstOrDefault();
-
-            var cardString = card?.ToString() ?? "-";
-
-            if (card != null)
-            {
-                candidates.Remove(card.Value);
-            }
-
-            if (tile.CascadeIndex == Move.Cell)
-            {
-                cellString = cardString;
-                WriteImageFile(SKImage.FromPixels(tileImage.PeekPixels()), "/home/konrad/bla.png");
-            }
-            else
-            {
-                sb.Append(cardString);
-                var column = tile.CascadeIndex;
-                sb.Append(column == 10 ? "\n" : " ");
-            }
-        }
-
-        return BoardHelper.Parse(sb.ToString(), cellString);
-    }
-
-    public static void ExtractImageTile(string imageFilePath, Func<int, string> tileNameSelector)
-    {
-        var image = SKImage.FromEncodedData(imageFilePath);
-
-        if (image.Width != 1920 || image.Height != 1080)
-        {
-            throw new ArgumentException("Image resolution is not 1920x1080.", nameof(imageFilePath));
-        }
-
-        foreach (var (tile, index) in EnumerateTiles().Select(Tuple.Create<Tile, int>))
-        {
-            var tileImage = image.Subset(tile.Region);
-            var name = tileNameSelector?.Invoke(index) ?? index.ToString();
-            var imagePath = $"{name}.png";
-
-            WriteImageFile(tileImage, imagePath);
-        }
     }
 
     private static void WriteImageFile(SKImage tileImage, string imagePath)
@@ -228,5 +245,8 @@ public class BoardExtractor
             return tileImage.Copy();
         }
     }
-
 }
+
+public record ExtractedCardRegion(int Left, int Top, int Width, int Height);
+
+public record ExtractedCard(ExtractedCardRegion Region, Card Card);
