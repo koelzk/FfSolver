@@ -12,6 +12,9 @@ using FfSolver;
 using ReactiveUI;
 using SolverAvn.Services;
 
+/// <summary>
+/// View model for main window
+/// </summary>
 public class MainWindowViewModel : ViewModelBase
 {
     protected readonly IScreenshotReader ScreenshotReader;
@@ -26,8 +29,14 @@ public class MainWindowViewModel : ViewModelBase
     private bool isWorking = false;
     private IReadOnlyCollection<CardViewModel> cards = new List<CardViewModel>();
     private bool canCancel;
-    private global::System.String statusText = "";
+    private string statusText = "";
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="MainWindowViewModel"/>.
+    /// </summary>
+    /// <param name="screenshotReader">Reads board states from screenshot images</param>
+    /// <param name="boardSolver">Solves boards</param>
+    /// <param name="imageFilePicker">Provides image file picking</param>
     public MainWindowViewModel(
         IScreenshotReader screenshotReader,
         IBoardSolver boardSolver,
@@ -49,53 +58,88 @@ public class MainWindowViewModel : ViewModelBase
             this.WhenAnyValue(vm => vm.CanCancel, (bool canCancel) => canCancel));
     }
 
-    private void Cancel()
-    {
-        cts.Cancel();
-        CanCancel = false;
-    }
-
+    /// <summary>
+    /// Indicates if board solving can be started.
+    /// </summary>
     public bool CanSolve => ReadResult?.Board != null;
 
+    /// <summary>
+    /// Gets the loaded screenshot.
+    /// </summary>
     public IImage? Screenshot => ReadResult?.Screenshot;
 
+    /// <summary>
+    /// Gets the list of detected cards for display in the view.
+    /// </summary>
     public IReadOnlyCollection<CardViewModel> Cards
     {
         get => cards;
         protected set => this.RaiseAndSetIfChanged(ref cards, value);
     }
 
-    public IReadOnlyCollection<string> Moves { get; private set; }
+    /// <summary>
+    /// Gets the move instructions returned by the solver as list of strings.
+    /// </summary>
+    public IReadOnlyCollection<string> Moves { get; private set; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Gets if the view model is currently busy with an long-running operation (either board detection or solving).
+    /// </summary>
+    /// <value></value>
     public bool IsWorking
     {
         get => isWorking;
         protected set => this.RaiseAndSetIfChanged(ref isWorking, value);
     }
 
+    /// <summary>
+    /// Gets if the current ongoing operation can be canceled.
+    /// </summary>
     public bool CanCancel
     {
         get => canCancel;
         protected set => this.RaiseAndSetIfChanged(ref canCancel, value);
     }
 
+    /// <summary>
+    /// Gets if the solver returned a result.
+    /// </summary>
     public bool HasSolverResult => SolveResultStatus != null;
 
     public SolveResultStatus? SolveResultStatus => SolverResult?.Status;
 
+    /// <summary>
+    /// Gets the command for reading a board state from a screenshot.
+    /// </summary>
     public ReactiveCommand<Unit, Unit> ReadScreenshotCommand { get; }
 
+    /// <summary>
+    /// Gets the command for solving a board.
+    /// </summary>
     public ReactiveCommand<Unit, Unit> SolveCommand { get; }
 
+    /// <summary>
+    /// Gets the comman for canceling an on-going operation.
+    /// </summary>
     public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
+    /// <summary>
+    /// Gets the progress in percent of an on-going operation.
+    /// </summary>
     public float ProgressInPercent { get; protected set; } = 0f;
+
+    /// <summary>
+    /// Gets the current status of an ongoing operation.
+    /// </summary>
     public string StatusText
     {
         get => statusText;
         protected set => this.RaiseAndSetIfChanged(ref statusText, value);
     }
 
+    /// <summary>
+    /// Gets or sets the result of board detection.
+    /// </summary>
     protected ScreenshotReaderResult? ReadResult
     {
         get => readResult;
@@ -107,12 +151,15 @@ public class MainWindowViewModel : ViewModelBase
             }
 
             this.RaiseAndSetIfChanged(ref readResult, value);
-            Cards = value.Cards.Select(c => new CardViewModel(c)).ToList();
+            Cards = value.Cards.Select(dc => new CardViewModel(dc)).ToList();
             this.RaisePropertyChanged(nameof(Screenshot));
             this.RaisePropertyChanged(nameof(CanSolve));
         }
     }
 
+    /// <summary>
+    /// Gets or sets the board solving result.
+    /// </summary>
     protected SolverResult? SolverResult
     {
         get => solverResult;
@@ -169,7 +216,13 @@ public class MainWindowViewModel : ViewModelBase
         StatusText = "Image loaded.";
     }
 
-    private async Task<T?> PerformWork<T>(Func<CancellationToken, T> action, bool canCancel = false) where T: class
+    private void Cancel()
+    {
+        cts.Cancel();
+        CanCancel = false;
+    }
+
+    private async Task<T?> PerformWork<T>(Func<CancellationToken, T> action, bool canCancel = false) where T : class
     {
         try
         {
@@ -207,6 +260,9 @@ public class MainWindowViewModel : ViewModelBase
     }
 }
 
+/// <summary>
+/// Derived view model intended for design-time preview only
+/// </summary>
 public class DesignTimeMainWindowViewModel : MainWindowViewModel
 {
     public DesignTimeMainWindowViewModel()

@@ -6,6 +6,10 @@ using SolverAvn.Services;
 
 namespace SolverAvn.ViewModels;
 
+/// <summary>
+/// View model for displaying a single card
+/// </summary>
+/// <seealso cref="Views.CardView"/>.
 public class CardViewModel : ViewModelBase
 {
     private Card card;
@@ -21,11 +25,24 @@ public class CardViewModel : ViewModelBase
         Region = detectedCard.Region;
     }
 
+    /// <summary>
+    /// Gets the card label
+    /// </summary>
     public string Label { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the card suit
+    /// </summary>
     public Suit Suit { get; private set; }
+
+    /// <summary>
+    /// Gets the background brush
+    /// </summary>
     public IBrush Background { get; private set; } = new SolidColorBrush(Color.FromRgb(255, 255, 255));
 
+    /// <summary>
+    /// Gets the card
+    /// </summary>
     public Card Card
     {
         get => card; set
@@ -47,7 +64,14 @@ public class CardViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Gets the region of the detected card in the screenshot.
+    /// </summary>
     public Rect Region { get; }
+
+    /// <summary>
+    /// Gets the foreground brush
+    /// </summary>
     public IBrush Foreground { get; private set; } = new SolidColorBrush(Color.FromRgb(0, 0, 0));
 
     private string GetLabel()
