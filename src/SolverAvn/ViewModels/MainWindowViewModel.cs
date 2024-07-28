@@ -213,7 +213,10 @@ public class MainWindowViewModel : ViewModelBase
         }
 
         ReadResult = await PerformWork(_ => ScreenshotReader.ReadScreenshot(imageFilePath));
-        StatusText = "Image loaded.";
+        if (ReadResult != null)
+        {
+            StatusText = "Image loaded.";
+        }
     }
 
     private void Cancel()
